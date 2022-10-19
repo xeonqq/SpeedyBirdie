@@ -1,5 +1,9 @@
 #include "brushless_motor.h"
 #include "config.h"
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+
 #include <AccelStepper.h>
 #include <Servo.h>
 
@@ -17,11 +21,83 @@ AccelStepper stepper(AccelStepper::HALF4WIRE, IN1, IN2, IN3, IN4);
 BrushlessMotor motor1{D0};
 BrushlessMotor motor2{D1};
 
+AsyncWebServer server(80);
+const char *ssid = "BirdyFeeder";
+const char *password = "svlohhof";
+IPAddress apIP(192, 168, 0, 1);
+
+void handleNotFound(AsyncWebServerRequest *request) {
+  String path = request->url();
+  if (!SPIFFS.exists(path)) {
+    request->send(404);
+    return;
+  }
+  String contentType = "text/plain";
+  if (path.endsWith(".css")) {
+    contentType = "text/css";
+  } else if (path.endsWith(".html")) {
+    contentType = "text/html";
+  } else if (path.endsWith(".js")) {
+    contentType = "application/javascript";
+  }
+  request->send(SPIFFS, path, contentType);
+}
+
+void ConfigureServer(AsyncWebServer &server) {
+  if (!SPIFFS.begin()) {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    Serial.println("Send index.html.");
+    request->send(SPIFFS, "/index.html", "text/html");
+  });
+
+  /*server.on("/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {*/
+  /*Serial.println("Send js");*/
+  /*request->send(SPIFFS, "/jquery.min.js", "text/javascript");*/
+  /*});*/
+
+  /*server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request)
+   * {*/
+  /*Serial.println("Send js2");*/
+  /*request->send(SPIFFS, "/jquery.min.js", "text/javascript");*/
+  /*});*/
+
+  // Receive shooting power from client and process it
+  server.on("/power", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String shoot_power = request->arg("power"); // 0-1000
+    Serial.println("Current shoot power: " + shoot_power);
+    /*motor1.RunSpeed(shoot_power.toFloat());*/
+    request->send(200);
+  });
+
+  server.onNotFound(handleNotFound);
+  // Send Favicon
+  server.serveStatic("/favicon.ico", SPIFFS, "/favicon.ico");
+  // Begin Server
+  server.begin();
+}
+void SetupSoftAP() {
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+
+  Serial.print("Setting soft-AP ... ");
+  Serial.println(WiFi.softAP(ssid, password) ? "Ready" : "Failed!");
+
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(myIP);
+  ConfigureServer(server);
+}
+
 void setup() {
+  Serial.begin(115200);
+  SetupSoftAP();
+
   motor1.Calibrate();
   motor2.Calibrate();
 
-  Serial.begin(115200);
   servo.attach(D4);
   // set the speed and acceleration
   const auto speed = stepper_config.GetSpeedStepsPerSec(
@@ -36,5 +112,6 @@ void loop() {
   stepper.move(stepper_config.GetStepsPerRevolution() * 4);
   stepper.run();
 
-  motor1.RunSpeed(0.0);
+  /*motor1.RunSpeed(0.0);*/
+  delay(10);
 }

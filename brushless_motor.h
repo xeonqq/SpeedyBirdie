@@ -1,13 +1,12 @@
-#include "math.h"
 #include <Servo.h>
 
 class BrushlessMotor {
 public:
   BrushlessMotor(uint8_t pin) { esc_.attach(pin); }
 
-  void RunSpeed(float percentage) {
+  void RunSpeed(int power) {
     const int speed_microseconds =
-        Map(percentage, 0.F, 1.F, min_microseconds_, max_microseconds_);
+        map(power, 0, 1000, min_microseconds_, max_microseconds_);
     esc_.writeMicroseconds(speed_microseconds);
   }
 
