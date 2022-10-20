@@ -53,17 +53,6 @@ void ConfigureServer(AsyncWebServer &server) {
     request->send(SPIFFS, "/index.html", "text/html");
   });
 
-  /*server.on("/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {*/
-  /*Serial.println("Send js");*/
-  /*request->send(SPIFFS, "/jquery.min.js", "text/javascript");*/
-  /*});*/
-
-  /*server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request)
-   * {*/
-  /*Serial.println("Send js2");*/
-  /*request->send(SPIFFS, "/jquery.min.js", "text/javascript");*/
-  /*});*/
-
   // Receive shooting power from client and process it
   server.on("/power", HTTP_POST, [](AsyncWebServerRequest *request) {
     String shoot_power = request->arg("power"); // 0-1000
