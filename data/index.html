@@ -1,46 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script type = "text/javascript" src = "jquery.min.js"></script>
+        <script type = "text/javascript" src="bootstrap.bundle.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="bootstrap.min.css">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <script type = "text/javascript" src = "jquery.min.js"></script>
-                <!--<script type = "text/javascript" src = "bootstrap.min.js"></script>-->
-              <script type = "text/javascript" src="bootstrap.bundle.min.js"></script>
-              <link rel="stylesheet" type="text/css" href="bootstrap.min.css">
+        <title>Badminton Feeder Control</title>
+        <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    </head>
 
-    <title>Badminton Feeder Control</title>
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-</head>
-
-<style>
+    <style>
 input[type="range"] {
-  width:300px;
+    width:300px;
 }
-</style>
+    </style>
 
-<body>
-    <div class="jumbotron jumbotron-fluid">
-        <div class="container">
-            <h1 class="lead">Badminton Feeder</h1><br>
-            <p id="current_shooting_power">Shooting power : 0</p>
-            <input type="range" id="power_range" min="0" max="800" value="0" step="2">
-            <button type="button" class="btn btn-primary" id="apply_power">Apply</button>
-            <br>
+    <body>
+        <div class="jumbotron jumbotron-fluid">
+            <div class="container">
+                <h1 class="lead">Badminton Feeder</h1><br>
+                <p id="shooting_power">Shooting power: 0</p>
+                <input type="range" id="power_range" min="0" max="800" value="0" step="2">
+                <button type="button" class="btn btn-primary" id="apply_power">Apply</button>
+                <br>
+
+            </div>
 
         </div>
-
-    </div>
-    <script>
-        $(document).ready(() => {
-                    $("#power_range").on("input", () => {
-                                $("#current_shooting_power").text("Current shooting power : " + $("#power_range").val());
-                                $.post("/power", {
-                                        power: $("#power_range").val(),
-                                    });
-                            });
-                });
-    </script>
-</body>
+        <script>
+            $(document).ready(() => {
+                            $("#power_range").on("input", () => {
+                                            $("#shooting_power").text("Shooting power: " + $("#power_range").val());
+                                        });
+                            $("#apply_power").on("click", () => {
+                                            $.post("/power", {
+                                                            power: $("#power_range").val(),
+                                                        });
+                                        });
+                        });
+        </script>
+    </body>
 
 </html>
