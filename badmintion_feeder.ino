@@ -7,6 +7,8 @@
 #include <AccelStepper.h>
 #include <Servo.h>
 
+#include "eeprom_decorator.h"
+
 #define IN1 1
 #define IN2 3
 #define IN3 15
@@ -83,6 +85,17 @@ void SetupSoftAP() {
 void setup() {
   Serial.begin(115200);
   SetupSoftAP();
+
+  // The begin() call is required to initialise the EEPROM library
+
+  // put some data into eeprom
+  /*EEPROM.put(0, eepromVar1);  // int - so 4 bytes (next address is '4')*/
+  /*EEPROM.put(4, eepromVar2);  // long - so 8 bytes (next address would be '12')*/
+
+  // write the data to EEPROM
+  /*boolean ok1 = EEPROM.commit();*/
+
+  /*Serial.println((ok1) ? "First commit OK" : "Commit failed");*/
 
   motor1.Calibrate();
   motor2.Calibrate();
