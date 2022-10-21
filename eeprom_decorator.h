@@ -10,14 +10,6 @@ struct ShootingIntervalSec {
 };
 
 using EEPROMData = std::tuple<ShootingPower, ShootingIntervalSec>;
-/*template <typename... Args> struct List;*/
-
-/*template <typename T, typename... Args> struct TypeList {*/
-/*using HEAD = T;*/
-/*using TAIL = List<Args...>;*/
-/*};*/
-
-/*template <typename... Args> struct Tail {};*/
 
 template <size_t I = 0, typename... Ts>
 typename std::enable_if<I == sizeof...(Ts), void>::type
@@ -42,15 +34,6 @@ template <typename... Args>
 int SumSizeofComponents(const std::tuple<Args...> &t) {
   return SumSizeofComponentsImpl(t, std::index_sequence_for<Args...>{});
 }
-/*template <typename Tuple, typename... Args>*/
-/*void ReadValueAtOffset(uint16_t offset, Tuple &tuple,*/
-/*TypeList<Args...> &type_list) {*/
-/*using HEAD = typename TypeList<Args...>::HEAD;*/
-/*EEPROM.get(offset, std::get<HEAD>(tuple));*/
-/*offset = offset + sizeof(HEAD);*/
-/*ReadValueAtOffset(offset, tuple,*/
-/*TypeList<typename TypeList<Args...>::TAIL>{});*/
-/*}*/
 
 class EEPROMDecorator {
 
