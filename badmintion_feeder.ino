@@ -27,6 +27,7 @@ AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
 const char *password = "svlohhof";
 IPAddress apIP(192, 168, 0, 1);
+EEPROMDecorator eeprom;
 
 void handleNotFound(AsyncWebServerRequest *request) {
   String path = request->url();
@@ -60,6 +61,7 @@ void ConfigureServer(AsyncWebServer &server) {
     String shoot_power = request->arg("power"); // 0-1000
     Serial.println("Current shoot power: " + shoot_power);
     /*motor1.RunSpeed(shoot_power.toFloat());*/
+    eeprom.Write(ShootingPower{shoot_power.toInt()});
     request->send(200);
   });
 
@@ -69,6 +71,7 @@ void ConfigureServer(AsyncWebServer &server) {
   // Begin Server
   server.begin();
 }
+
 void SetupSoftAP() {
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
@@ -84,13 +87,15 @@ void SetupSoftAP() {
 
 void setup() {
   Serial.begin(115200);
+  eeprom.Init();
   SetupSoftAP();
 
   // The begin() call is required to initialise the EEPROM library
 
   // put some data into eeprom
   /*EEPROM.put(0, eepromVar1);  // int - so 4 bytes (next address is '4')*/
-  /*EEPROM.put(4, eepromVar2);  // long - so 8 bytes (next address would be '12')*/
+  /*EEPROM.put(4, eepromVar2);  // long - so 8 bytes (next address would be
+   * '12')*/
 
   // write the data to EEPROM
   /*boolean ok1 = EEPROM.commit();*/
