@@ -1,12 +1,13 @@
-#include "brushless_motor.h"
-#include "config.h"
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
 #include <AccelStepper.h>
+#include <ESP_EEPROM.h>
 #include <Servo.h>
 
+#include "brushless_motor.h"
+#include "config.h"
 #include "eeprom_decorator.h"
 
 #define IN1 1
@@ -61,7 +62,7 @@ void ConfigureServer(AsyncWebServer &server) {
     String shoot_power = request->arg("power"); // 0-1000
     Serial.println("Current shoot power: " + shoot_power);
     /*motor1.RunSpeed(shoot_power.toFloat());*/
-    eeprom.Write(ShootingPower{shoot_power.toInt()});
+    eeprom.Write(ShootingPower{static_cast<uint16_t>(shoot_power.toInt())});
     request->send(200);
   });
 
@@ -85,6 +86,7 @@ void SetupSoftAP() {
   ConfigureServer(server);
 }
 
+EEPROMData data;
 void setup() {
   Serial.begin(115200);
   eeprom.Init();
@@ -118,7 +120,9 @@ void loop() {
 
   stepper.move(stepper_config.GetStepsPerRevolution() * 4);
   stepper.run();
+  // const auto data = eeprom.ReadData();
+  // Serial.println(std::get<ShootingPower>(data).value);
 
   /*motor1.RunSpeed(0.0);*/
-  delay(10);
+  delay(100);
 }
