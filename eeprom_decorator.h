@@ -20,13 +20,13 @@ using EEPROMData = std::tuple<ShootingPower, ShootingIntervalSec>;
 namespace detail {
 template <size_t I = 0, typename... Ts>
 typename std::enable_if<I == sizeof...(Ts), void>::type
-ReadValueAtOffset(std::tuple<Ts...> &tuple, uint16_t offset) {
+ReadAllDataAfterOffset(std::tuple<Ts...> &tuple, uint16_t offset) {
   return;
 }
 
 template <size_t I = 0, typename... Ts>
 typename std::enable_if<(I < sizeof...(Ts)), void>::type
-ReadValueAtOffset(std::tuple<Ts...> &tuple, uint16_t offset) {
+ReadAllDataAfterOffset(std::tuple<Ts...> &tuple, uint16_t offset) {
   EEPROM.get(offset, std::get<I>(tuple));
   // Serial.print("read offset:");
   // Serial.print(offset);
@@ -35,7 +35,7 @@ ReadValueAtOffset(std::tuple<Ts...> &tuple, uint16_t offset) {
   constexpr auto size = sizeof(std::tuple_element_t<I, std::tuple<Ts...>>);
   // Serial.print(" with size:");
   // Serial.println(size);
-  ReadValueAtOffset<I + 1>(tuple, offset + size);
+  ReadAllDataAfterOffset<I + 1>(tuple, offset + size);
 }
 
 template <typename Tuple, typename T>
@@ -61,11 +61,19 @@ public:
 
   EEPROMData ReadData() {
     EEPROMData data;
-    detail::ReadValueAtOffset(data, 0);
+    detail::ReadAllDataAfterOffset(data, 0);
     return data;
   }
 
+  template <typename T> T Read() {
+    T value{};
+    const auto offset = detail::GetOffset<EEPROMData, T>();
+    EEPROM.get(offset, value);
+    return value;
+  }
+
   template <typename T> void Write(const T &value) {
+
     const auto offset = detail::GetOffset<EEPROMData, T>();
     EEPROM.put(offset, value);
     // Serial.print("write offset:");

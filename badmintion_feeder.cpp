@@ -86,7 +86,6 @@ void SetupSoftAP() {
   ConfigureServer(server);
 }
 
-EEPROMData data;
 void setup() {
   Serial.begin(115200);
   eeprom.Init();
@@ -110,6 +109,8 @@ void loop() {
   stepper.run();
   // const auto data = eeprom.ReadData();
   // Serial.println(std::get<ShootingPower>(data).value);
+  // const auto data = eeprom.Read<ShootingPower>();
+  // Serial.println(data.value);
 
   /*motor1.RunSpeed(0.0);*/
   delay(100);
