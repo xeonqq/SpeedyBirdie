@@ -4,6 +4,7 @@
 #include <tuple>
 #include <utility>
 
+#define DEBUG
 struct ShootingPower {
   using type = uint16_t;
   ShootingPower(type power) : value{power} {}
@@ -33,13 +34,15 @@ template <size_t I = 0, typename... Ts>
 typename std::enable_if<(I < sizeof...(Ts)), void>::type
 ReadAllDataAfterOffset(std::tuple<Ts...> &tuple, uint16_t offset) {
   EEPROM.get(offset, std::get<I>(tuple));
+  constexpr auto size = sizeof(std::tuple_element_t<I, std::tuple<Ts...>>);
+#ifdef DEBUG
   Serial.print("read offset:");
   Serial.print(offset);
   Serial.print(" with value:");
   Serial.print(std::get<I>(tuple).value);
-  constexpr auto size = sizeof(std::tuple_element_t<I, std::tuple<Ts...>>);
   Serial.print(" with size:");
   Serial.println(size);
+#endif
   ReadAllDataAfterOffset<I + 1>(tuple, offset + size);
 }
 
@@ -86,14 +89,15 @@ public:
     return value;
   }
 
-  template <typename T> void Write(const T &value) {
-
-    const auto offset = detail::GetOffset<EEPROMData, T>();
-    EEPROM.put(offset, value);
+  template <typename Struct, typename T> void Write(const T &value) {
+    const auto offset = detail::GetOffset<EEPROMData, Struct>();
+    EEPROM.put(offset, static_cast<typename Struct::type>(value));
+#ifdef DEBUG
     Serial.print("write offset:");
     Serial.print(offset);
     Serial.print(" with value:");
-    Serial.println(value.value);
+    Serial.println(value);
+#endif
     const auto ok = EEPROM.commit();
     if (!ok) {
       Serial.println("EEPROM commit failed");

@@ -49,18 +49,17 @@ input[type="range"] {
                             $("#apply_config").on("click", () => {
                                             $.post("/apply_config", {
                                                             power: $("#power_range").val(),
-                                                            interval: $("#shooting_interval_range").val(),
+                                                            interval: $("#shooting_interval_range").val()
                                                         });
                                         });
 
                             $.getJSON("eeprom.json", (json)=> {
-
                                             console.log(json);
                                             $("#power_range").val(json.shooting_power);
-                                            $("#shooting_power").val(json.shooting_power);
-
                                             $("#shooting_interval_range").val(json.shooting_interval_sec);
-                                            $("#shooting_interval_sec").val(json.shooting_interval_sec);
+
+                                            $("#shooting_power").text(json.shooting_power);
+                                            $("#shooting_interval_sec").text(json.shooting_interval_sec);
                                         });
                         });
         </script>

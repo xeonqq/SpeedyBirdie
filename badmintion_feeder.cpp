@@ -57,33 +57,19 @@ void ConfigureServer(AsyncWebServer &server) {
     request->send(SPIFFS, "/index.html", "text/html");
   });
 
-  server.on("/load_power", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain",
-                  String{eeprom.Read<ShootingPower>().value});
-  });
-
   server.on("/eeprom.json", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "application/json", ToJsonBuf(eeprom.ReadData()));
+    const auto json_str = ToJsonBuf(eeprom.ReadData());
+    request->send(200, "application/json", json_str);
   });
 
-  // Receive shooting power from client and process it
-  /*server.on("/power", HTTP_POST, [](AsyncWebServerRequest *request) {*/
-  /*String shoot_power = request->arg("power"); // 0-1000*/
-  /*Serial.println("Current shoot power: " + shoot_power);*/
-  /*[>motor1.RunSpeed(shoot_power.toFloat());<]*/
-  /*eeprom.Write(ShootingPower{static_cast<uint16_t>(shoot_power.toInt())});*/
-  /*request->send(200);*/
-  /*});*/
   server.on("/apply_config", HTTP_POST, [](AsyncWebServerRequest *request) {
     String shoot_power = request->arg("power");              // 0-1000
     String shooting_interval_sec = request->arg("interval"); // 0-8
     Serial.println("Current shoot power: " + shoot_power);
     Serial.println("Current shoot interval: " + shooting_interval_sec);
     /*motor1.RunSpeed(shoot_power.toFloat());*/
-    eeprom.Write(
-        ShootingPower{static_cast<ShootingPower::type>(shoot_power.toInt())});
-    eeprom.Write(ShootingIntervalSec{
-        static_cast<ShootingIntervalSec::type>(shooting_interval_sec.toInt())});
+    eeprom.Write<ShootingPower>(shoot_power.toInt());
+    eeprom.Write<ShootingIntervalSec>(shooting_interval_sec.toInt());
     request->send(200);
   });
 
