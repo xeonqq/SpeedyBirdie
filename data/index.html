@@ -25,8 +25,15 @@ input[type="range"] {
                     <label for="power_range">Shooting power: </label>
                     <label id="shooting_power">0</label><br>
                     <input type="range" id="power_range" min="0" max="800" value="0" step="2">
-                    <button type="button" class="btn btn-primary" id="apply_power">Apply</button>
                 </div>
+                <div class="form-group">
+                    <label for="shooting_interval_range">Shooting interval every: </label>
+                    <label id="shooting_interval_sec">0</label>
+                    <label for="shooting_interval_range">&nbsp;second</label><br>
+                    <input type="range" id="shooting_interval_range" min="0" max="8" value="0" step="1">
+                </div>
+                <button type="button" class="btn btn-primary" id="apply_config">Apply</button>
+
             </div>
         </div>
         <script>
@@ -34,12 +41,27 @@ input[type="range"] {
                             $("#power_range").on("input", () => {
                                             $("#shooting_power").text($("#power_range").val());
                                         });
-                            $("#apply_power").on("click", () => {
-                                            $.post("/power", {
+
+                            $("#shooting_interval_range").on("input", () => {
+                                            $("#shooting_interval_sec").text($("#shooting_interval_range").val());
+                                        });
+
+                            $("#apply_config").on("click", () => {
+                                            $.post("/apply_config", {
                                                             power: $("#power_range").val(),
+                                                            interval: $("#shooting_interval_range").val(),
                                                         });
                                         });
-                            $("#shooting_power").load("load_power", (data)=> {$("#power_range").val(data);});
+
+                            $.getJSON("eeprom.json", (json)=> {
+
+                                            console.log(json);
+                                            $("#power_range").val(json.shooting_power);
+                                            $("#shooting_power").val(json.shooting_power);
+
+                                            $("#shooting_interval_range").val(json.shooting_interval_sec);
+                                            $("#shooting_interval_sec").val(json.shooting_interval_sec);
+                                        });
                         });
         </script>
     </body>

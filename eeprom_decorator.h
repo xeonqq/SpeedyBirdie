@@ -1,18 +1,23 @@
 #include "tuple_helper.h"
+#include <ArduinoJson.h>
 #include <ESP_EEPROM.h>
 #include <tuple>
 #include <utility>
 
 struct ShootingPower {
-  ShootingPower(uint16_t power) : value{power} {}
+  using type = uint16_t;
+  ShootingPower(type power) : value{power} {}
   ShootingPower() = default;
-  uint16_t value;
+  static constexpr char const *name = "shooting_power";
+  type value;
 };
 
 struct ShootingIntervalSec {
-  ShootingIntervalSec(uint8_t shoot_interval_sec) : value{shoot_interval_sec} {}
+  using type = uint8_t;
+  ShootingIntervalSec(type shoot_interval_sec) : value{shoot_interval_sec} {}
   ShootingIntervalSec() = default;
-  uint8_t value;
+  static constexpr char const *name = "shooting_interval_sec";
+  type value;
 };
 
 using EEPROMData = std::tuple<ShootingPower, ShootingIntervalSec>;
@@ -28,13 +33,13 @@ template <size_t I = 0, typename... Ts>
 typename std::enable_if<(I < sizeof...(Ts)), void>::type
 ReadAllDataAfterOffset(std::tuple<Ts...> &tuple, uint16_t offset) {
   EEPROM.get(offset, std::get<I>(tuple));
-  // Serial.print("read offset:");
-  // Serial.print(offset);
-  // Serial.print(" with value:");
-  // Serial.print(std::get<I>(tuple).value);
+  Serial.print("read offset:");
+  Serial.print(offset);
+  Serial.print(" with value:");
+  Serial.print(std::get<I>(tuple).value);
   constexpr auto size = sizeof(std::tuple_element_t<I, std::tuple<Ts...>>);
-  // Serial.print(" with size:");
-  // Serial.println(size);
+  Serial.print(" with size:");
+  Serial.println(size);
   ReadAllDataAfterOffset<I + 1>(tuple, offset + size);
 }
 
@@ -42,8 +47,7 @@ template <typename Tuple, typename T>
 typename std::enable_if<(Index<T, Tuple>::value > 0), uint16_t>::type
 GetOffset() {
   const auto type_index = Index<T, Tuple>::value;
-  return SumSizeofComponentsImpl<Tuple>(
-      std::make_index_sequence<type_index - 1>{});
+  return SumSizeofComponentsImpl<Tuple>(std::make_index_sequence<type_index>{});
 };
 
 template <typename Tuple, typename T>
@@ -53,6 +57,16 @@ GetOffset() {
 };
 
 } // namespace detail
+
+String ToJsonBuf(const EEPROMData &eeprom_data) {
+  DynamicJsonDocument json(std::tuple_size_v<EEPROMData> * 30);
+  for_each_in_tuple(
+      eeprom_data, [&json](const auto &data) { json[data.name] = data.value; });
+
+  String buf;
+  serializeJson(json, buf);
+  return buf;
+}
 
 class EEPROMDecorator {
 public:
@@ -76,10 +90,10 @@ public:
 
     const auto offset = detail::GetOffset<EEPROMData, T>();
     EEPROM.put(offset, value);
-    // Serial.print("write offset:");
-    // Serial.print(offset);
-    // Serial.print(" with value:");
-    // Serial.println(value.value);
+    Serial.print("write offset:");
+    Serial.print(offset);
+    Serial.print(" with value:");
+    Serial.println(value.value);
     const auto ok = EEPROM.commit();
     if (!ok) {
       Serial.println("EEPROM commit failed");
