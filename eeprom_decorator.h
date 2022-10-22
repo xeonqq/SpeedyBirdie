@@ -72,6 +72,9 @@ public:
     // Serial.print(offset);
     // Serial.print(" with value:");
     // Serial.println(value.value);
-    EEPROM.commit();
+    const auto ok = EEPROM.commit();
+    if (!ok) {
+      Serial.println("EEPROM commit failed");
+    }
   }
 };
