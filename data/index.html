@@ -21,24 +21,25 @@ input[type="range"] {
         <div class="jumbotron jumbotron-fluid">
             <div class="container">
                 <h1 class="lead">Badminton Feeder</h1><br>
-                <p id="shooting_power">Shooting power: 0</p>
-                <input type="range" id="power_range" min="0" max="800" value="0" step="2">
-                <button type="button" class="btn btn-primary" id="apply_power">Apply</button>
-                <br>
-
+                <div class="form-group">
+                    <label for="power_range">Shooting power: </label>
+                    <label id="shooting_power">0</label><br>
+                    <input type="range" id="power_range" min="0" max="800" value="0" step="2">
+                    <button type="button" class="btn btn-primary" id="apply_power">Apply</button>
+                </div>
             </div>
-
         </div>
         <script>
             $(document).ready(() => {
                             $("#power_range").on("input", () => {
-                                            $("#shooting_power").text("Shooting power: " + $("#power_range").val());
+                                            $("#shooting_power").text($("#power_range").val());
                                         });
                             $("#apply_power").on("click", () => {
                                             $.post("/power", {
                                                             power: $("#power_range").val(),
                                                         });
                                         });
+                            $("#shooting_power").load("load_power", (data)=> {$("#power_range").val(data);});
                         });
         </script>
     </body>

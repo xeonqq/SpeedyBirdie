@@ -57,6 +57,11 @@ void ConfigureServer(AsyncWebServer &server) {
     request->send(SPIFFS, "/index.html", "text/html");
   });
 
+  server.on("/load_power", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain",
+                  String{eeprom.Read<ShootingPower>().value});
+  });
+
   // Receive shooting power from client and process it
   server.on("/power", HTTP_POST, [](AsyncWebServerRequest *request) {
     String shoot_power = request->arg("power"); // 0-1000
