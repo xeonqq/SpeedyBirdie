@@ -69,7 +69,7 @@ void ConfigureServer(AsyncWebServer &server) {
     Serial.println("Current shoot interval: " + shooting_interval_sec);
     /*motor1.RunSpeed(shoot_power.toFloat());*/
     eeprom.Write<ShootingPower>(shoot_power.toInt());
-    eeprom.Write<ShootingIntervalSec>(shooting_interval_sec.toInt());
+    eeprom.Write<ShootingIntervalSec>(shooting_interval_sec.toFloat());
     request->send(200);
   });
 

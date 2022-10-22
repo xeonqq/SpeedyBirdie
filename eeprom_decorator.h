@@ -14,7 +14,7 @@ struct ShootingPower {
 };
 
 struct ShootingIntervalSec {
-  using type = uint8_t;
+  using type = float;
   ShootingIntervalSec(type shoot_interval_sec) : value{shoot_interval_sec} {}
   ShootingIntervalSec() = default;
   static constexpr char const *name = "shooting_interval_sec";
