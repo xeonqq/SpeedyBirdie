@@ -28,7 +28,7 @@ BrushlessMotor motor2{D1};
 
 AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
-const char *password = "svlohhof";
+const char *password = "chinasprung";
 IPAddress apIP(192, 168, 0, 1);
 
 EEPROMDecorator eeprom;
