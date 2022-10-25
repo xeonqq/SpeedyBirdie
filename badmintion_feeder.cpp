@@ -5,10 +5,12 @@
 #include <AccelStepper.h>
 #include <ESP_EEPROM.h>
 #include <Servo.h>
+#include <Ticker.h>
 
 #include "brushless_motor.h"
 #include "config.h"
 #include "eeprom_decorator.h"
+#include "minimum_jerk_trajectory_planner.h"
 
 #define IN1 1
 #define IN2 3
@@ -28,7 +30,14 @@ AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
 const char *password = "svlohhof";
 IPAddress apIP(192, 168, 0, 1);
+
 EEPROMDecorator eeprom;
+
+Ticker servo_timer;
+const float servo_loop_interval = 0.02;        // sec
+const float servo_end_position_duration = 3.0; // sec;
+
+MinimumJerkTrajortoryPlanner planner{servo_end_position_duration, 500};
 
 void handleNotFound(AsyncWebServerRequest *request) {
   String path = request->url();
@@ -93,11 +102,36 @@ void SetupSoftAP() {
   ConfigureServer(server);
 }
 
+auto servo_loop = [&planner, &servo, &servo_loop_interval]() {
+  static float t = 0;
+  static int direction = 1;
+
+  const auto new_position = planner.Plan(t);
+#ifdef DEBUG
+  Serial.print(" @");
+  Serial.print(t);
+  Serial.print(" p: ");
+  Serial.println(static_cast<int>(new_position) + 1000);
+#endif
+  servo.writeMicroseconds(static_cast<int>(new_position) + 1000);
+  const float eps = std::numeric_limits<float>::epsilon();
+  if ((t + servo_loop_interval) > (planner.GetDuration() + eps)) {
+    direction = -1;
+    t = planner.GetDuration() - servo_loop_interval;
+  } else if ((t - servo_loop_interval) < -eps) {
+    direction = 1;
+    t = servo_loop_interval;
+  } else {
+    t += servo_loop_interval * direction;
+  }
+};
+
 void setup() {
   Serial.begin(115200);
   eeprom.Init();
   SetupSoftAP();
 
+  servo_timer.attach(servo_loop_interval, servo_loop);
   motor1.Calibrate();
   motor2.Calibrate();
 
@@ -111,7 +145,6 @@ void setup() {
 }
 
 void loop() {
-
   stepper.move(stepper_config.GetStepsPerRevolution() * 4);
   stepper.run();
   // const auto data = eeprom.ReadData();
