@@ -1,14 +1,3 @@
-class BadmintonFeederConfig {
-public:
-  BadmintonFeederConfig(float shoot_interval_sec)
-      : shoot_interval_sec_{shoot_interval_sec} {}
-
-  float GetShootIntervalSec() const { return shoot_interval_sec_; }
-
-private:
-  float shoot_interval_sec_;
-};
-
 class StepperConfig {
 public:
   StepperConfig(int steps_per_revolution)

@@ -19,7 +19,6 @@
 #define IN4 13
 
 StepperConfig stepper_config{200};
-BadmintonFeederConfig badmintion_feeder_config{5};
 
 Servo servo;
 
@@ -45,10 +44,17 @@ MicroQt::Timer stepper_timer{
 uint16_t servo_end_position = 500;
 MinimumJerkTrajortoryPlanner planner{};
 
+void adaptStepperSpeed(float shooting_interval_sec) {
+  const auto speed = stepper_config.GetSpeedStepsPerSec(shooting_interval_sec);
+  stepper.setMaxSpeed(speed * 2);
+  stepper.setSpeed(speed);
+}
+
 void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   eeprom.Write<ShootingPower>(shoot_power);
   eeprom.Write<ShootingIntervalSec>(shooting_interval_sec);
   planner.Init(shooting_interval_sec / 2, servo_end_position);
+  adaptStepperSpeed(shooting_interval_sec);
 
   motor1.RunSpeed(shoot_power);
   motor2.RunSpeed(shoot_power);
@@ -147,7 +153,8 @@ void setup() {
   eeprom.Init();
   SetupSoftAP();
 
-  planner.Init(eeprom.Read<ShootingIntervalSec>() / 2, servo_end_position);
+  const float shooting_interval_sec = eeprom.Read<ShootingIntervalSec>();
+  planner.Init(shooting_interval_sec / 2, servo_end_position);
   servo_timer.sglTimeout.connect(servo_loop);
   servo_timer.start();
 
@@ -156,10 +163,7 @@ void setup() {
 
   servo.attach(D4);
   // set the speed and acceleration
-  const auto speed = stepper_config.GetSpeedStepsPerSec(
-      badmintion_feeder_config.GetShootIntervalSec());
-  stepper.setMaxSpeed(speed * 2);
-  stepper.setSpeed(speed);
+  adaptStepperSpeed(shooting_interval_sec);
   stepper.setAcceleration(200);
 
   stepper_timer.sglTimeout.connect([&stepper_config, &stepper]() {
