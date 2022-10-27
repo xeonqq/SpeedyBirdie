@@ -7,6 +7,7 @@
 #include <MicroQt.h>
 #include <Servo.h>
 
+#include "EventLoop.h"
 #include "brushless_motor.h"
 #include "config.h"
 #include "eeprom_decorator.h"
@@ -42,6 +43,14 @@ MicroQt::Timer stepper_timer{
     static_cast<uint32_t>(stepper_loop_interval * 1000)};
 
 MinimumJerkTrajortoryPlanner planner{servo_end_position_duration, 500};
+
+void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
+  eeprom.Write<ShootingPower>(shoot_power);
+  eeprom.Write<ShootingIntervalSec>(shooting_interval_sec);
+
+  motor1.RunSpeed(shoot_power);
+  motor2.RunSpeed(shoot_power);
+};
 
 void handleNotFound(AsyncWebServerRequest *request) {
   String path = request->url();
@@ -80,9 +89,10 @@ void ConfigureServer(AsyncWebServer &server) {
     String shooting_interval_sec = request->arg("interval"); // 0-8
     Serial.println("Current shoot power: " + shoot_power);
     Serial.println("Current shoot interval: " + shooting_interval_sec);
-    /*motor1.RunSpeed(shoot_power.toFloat());*/
-    eeprom.Write<ShootingPower>(shoot_power.toInt());
-    eeprom.Write<ShootingIntervalSec>(shooting_interval_sec.toFloat());
+    MicroQt::eventLoop.enqueueEvent([shoot_power, shooting_interval_sec]() {
+      onApplyConfigRequest(shoot_power.toInt(),
+                           shooting_interval_sec.toFloat());
+    });
     request->send(200);
   });
 
@@ -111,7 +121,7 @@ auto servo_loop = [&planner, &servo, &servo_loop_interval]() {
   static int direction = 1;
 
   const auto new_position = planner.Plan(t);
-#ifdef DEBUG
+#ifdef DEBUG_SERVO
   Serial.print(" @");
   Serial.print(t);
   Serial.print(" p: ");
@@ -156,12 +166,4 @@ void setup() {
   stepper_timer.start();
 }
 
-void loop() {
-  MicroQt::eventLoop.exec();
-  // const auto data = eeprom.ReadData();
-  // Serial.println(std::get<ShootingPower>(data).value);
-  // const auto data = eeprom.Read<ShootingPower>();
-  // Serial.println(data.value);
-
-  /*motor1.RunSpeed(0.0);*/
-}
+void loop() { MicroQt::eventLoop.exec(); }

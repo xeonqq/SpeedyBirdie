@@ -4,7 +4,8 @@
 #include <tuple>
 #include <utility>
 
-#define DEBUG
+#define DEBUG_EEPROM
+
 struct ShootingPower {
   using type = uint16_t;
   ShootingPower(type power) : value{power} {}
@@ -35,7 +36,7 @@ typename std::enable_if<(I < sizeof...(Ts)), void>::type
 ReadAllDataAfterOffset(std::tuple<Ts...> &tuple, uint16_t offset) {
   EEPROM.get(offset, std::get<I>(tuple));
   constexpr auto size = sizeof(std::tuple_element_t<I, std::tuple<Ts...>>);
-#ifdef DEBUG
+#ifdef DEBUG_EEPROM
   Serial.print("read offset:");
   Serial.print(offset);
   Serial.print(" with value:");
@@ -92,7 +93,7 @@ public:
   template <typename Struct, typename T> void Write(const T &value) {
     const auto offset = detail::GetOffset<EEPROMData, Struct>();
     EEPROM.put(offset, static_cast<typename Struct::type>(value));
-#ifdef DEBUG
+#ifdef DEBUG_EEPROM
     Serial.print("write offset:");
     Serial.print(offset);
     Serial.print(" with value:");
