@@ -6,20 +6,22 @@
 
 #define DEBUG_EEPROM
 
-struct ShootingPower {
-  using type = uint16_t;
-  ShootingPower(type power) : value{power} {}
-  ShootingPower() = default;
-  static constexpr char const *name = "shooting_power";
-  type value;
+template <typename T> struct EEPROMBaseType {
+  EEPROMBaseType(const T &v) : value{v} {}
+  EEPROMBaseType() = default;
+  using type = T;
+  operator type() const { return value; }
+  T value;
 };
 
-struct ShootingIntervalSec {
-  using type = float;
-  ShootingIntervalSec(type shoot_interval_sec) : value{shoot_interval_sec} {}
-  ShootingIntervalSec() = default;
+struct ShootingPower : EEPROMBaseType<uint16_t> {
+  using EEPROMBaseType<uint16_t>::EEPROMBaseType;
+  static constexpr char const *name = "shooting_power";
+};
+
+struct ShootingIntervalSec : EEPROMBaseType<float> {
+  using EEPROMBaseType<float>::EEPROMBaseType;
   static constexpr char const *name = "shooting_interval_sec";
-  type value;
 };
 
 using EEPROMData = std::tuple<ShootingPower, ShootingIntervalSec>;

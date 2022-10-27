@@ -42,11 +42,13 @@ const float stepper_loop_interval = 0.02; // sec
 MicroQt::Timer stepper_timer{
     static_cast<uint32_t>(stepper_loop_interval * 1000)};
 
-MinimumJerkTrajortoryPlanner planner{servo_end_position_duration, 500};
+uint16_t servo_end_position = 500;
+MinimumJerkTrajortoryPlanner planner{};
 
 void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   eeprom.Write<ShootingPower>(shoot_power);
   eeprom.Write<ShootingIntervalSec>(shooting_interval_sec);
+  planner.Init(shooting_interval_sec / 2, servo_end_position);
 
   motor1.RunSpeed(shoot_power);
   motor2.RunSpeed(shoot_power);
@@ -145,6 +147,7 @@ void setup() {
   eeprom.Init();
   SetupSoftAP();
 
+  planner.Init(eeprom.Read<ShootingIntervalSec>() / 2, servo_end_position);
   servo_timer.sglTimeout.connect(servo_loop);
   servo_timer.start();
 
