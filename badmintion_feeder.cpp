@@ -4,8 +4,8 @@
 
 #include <AccelStepper.h>
 #include <ESP_EEPROM.h>
+#include <MicroQt.h>
 #include <Servo.h>
-#include <Ticker.h>
 
 #include "brushless_motor.h"
 #include "config.h"
@@ -33,9 +33,9 @@ IPAddress apIP(192, 168, 0, 1);
 
 EEPROMDecorator eeprom;
 
-Ticker servo_timer;
 const float servo_loop_interval = 0.02;        // sec
 const float servo_end_position_duration = 3.0; // sec;
+MicroQt::Timer servo_timer{static_cast<uint32_t>(servo_loop_interval * 1000)};
 
 MinimumJerkTrajortoryPlanner planner{servo_end_position_duration, 500};
 
@@ -131,7 +131,9 @@ void setup() {
   eeprom.Init();
   SetupSoftAP();
 
-  servo_timer.attach(servo_loop_interval, servo_loop);
+  servo_timer.sglTimeout.connect(servo_loop);
+  servo_timer.start();
+
   motor1.Calibrate();
   motor2.Calibrate();
 
@@ -147,11 +149,11 @@ void setup() {
 void loop() {
   stepper.move(stepper_config.GetStepsPerRevolution() * 4);
   stepper.run();
+  MicroQt::eventLoop.exec();
   // const auto data = eeprom.ReadData();
   // Serial.println(std::get<ShootingPower>(data).value);
   // const auto data = eeprom.Read<ShootingPower>();
   // Serial.println(data.value);
 
   /*motor1.RunSpeed(0.0);*/
-  delay(100);
 }
