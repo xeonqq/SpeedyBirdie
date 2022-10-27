@@ -37,6 +37,10 @@ const float servo_loop_interval = 0.02;        // sec
 const float servo_end_position_duration = 3.0; // sec;
 MicroQt::Timer servo_timer{static_cast<uint32_t>(servo_loop_interval * 1000)};
 
+const float stepper_loop_interval = 0.02; // sec
+MicroQt::Timer stepper_timer{
+    static_cast<uint32_t>(stepper_loop_interval * 1000)};
+
 MinimumJerkTrajortoryPlanner planner{servo_end_position_duration, 500};
 
 void handleNotFound(AsyncWebServerRequest *request) {
@@ -144,11 +148,15 @@ void setup() {
   stepper.setMaxSpeed(speed * 2);
   stepper.setSpeed(speed);
   stepper.setAcceleration(200);
+
+  stepper_timer.sglTimeout.connect([&stepper_config, &stepper]() {
+    stepper.move(stepper_config.GetStepsPerRevolution() * 4);
+    stepper.run();
+  });
+  stepper_timer.start();
 }
 
 void loop() {
-  stepper.move(stepper_config.GetStepsPerRevolution() * 4);
-  stepper.run();
   MicroQt::eventLoop.exec();
   // const auto data = eeprom.ReadData();
   // Serial.println(std::get<ShootingPower>(data).value);
