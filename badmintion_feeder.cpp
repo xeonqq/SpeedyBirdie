@@ -7,10 +7,10 @@
 #include <MicroQt.h>
 
 #include "EventLoop.h"
-#include "brushless_motor.h"
 #include "config.h"
 #include "eeprom_decorator.h"
 #include "minimum_jerk_trajectory_planner.h"
+#include "motor_composite.h"
 #include "servo.h"
 
 #define IN1 1
@@ -21,8 +21,7 @@
 StepperConfig stepper_config{200};
 
 AccelStepper stepper(AccelStepper::HALF4WIRE, IN1, IN2, IN3, IN4);
-BrushlessMotor motor1{D0};
-BrushlessMotor motor2{D1};
+Motors motors{D0, D1};
 
 AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
@@ -55,8 +54,7 @@ void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   planner.Init(shooting_interval_sec / 2, servo_end_position);
   adaptStepperSpeed(shooting_interval_sec);
 
-  motor1.RunSpeed(shoot_power);
-  motor2.RunSpeed(shoot_power);
+  motors.RunSpeed(shoot_power);
 };
 
 void handleNotFound(AsyncWebServerRequest *request) {
@@ -150,8 +148,7 @@ auto servo_loop = [&planner, &servo, &servo_loop_interval]() {
 void setup() {
   Serial.begin(115200);
 
-  motor1.Calibrate();
-  motor2.Calibrate();
+  motors.Calibrate();
 
   eeprom.Init();
   SetupSoftAP();
