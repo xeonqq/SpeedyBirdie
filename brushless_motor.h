@@ -12,6 +12,7 @@ public:
 
   void Calibrate() {
     esc_.writeMicroseconds(max_microseconds_);
+    Serial.println("calbrating");
     delay(1000); // wait 1s
     esc_.writeMicroseconds(min_microseconds_);
   }

@@ -5,13 +5,13 @@
 #include <AccelStepper.h>
 #include <ESP_EEPROM.h>
 #include <MicroQt.h>
-#include <Servo.h>
 
 #include "EventLoop.h"
 #include "brushless_motor.h"
 #include "config.h"
 #include "eeprom_decorator.h"
 #include "minimum_jerk_trajectory_planner.h"
+#include "servo.h"
 
 #define IN1 1
 #define IN2 3
@@ -19,8 +19,6 @@
 #define IN4 13
 
 StepperConfig stepper_config{200};
-
-Servo servo;
 
 AccelStepper stepper(AccelStepper::HALF4WIRE, IN1, IN2, IN3, IN4);
 BrushlessMotor motor1{D0};
@@ -30,6 +28,7 @@ AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
 const char *password = "chinasprung";
 IPAddress apIP(192, 168, 0, 1);
+FeederServo servo(D4);
 
 EEPROMDecorator eeprom;
 
@@ -41,7 +40,7 @@ const float stepper_loop_interval = 0.02; // sec
 MicroQt::Timer stepper_timer{
     static_cast<uint32_t>(stepper_loop_interval * 1000)};
 
-uint16_t servo_end_position = 500;
+float servo_end_position = 0.5;
 MinimumJerkTrajortoryPlanner planner{};
 
 void adaptStepperSpeed(float shooting_interval_sec) {
@@ -133,9 +132,9 @@ auto servo_loop = [&planner, &servo, &servo_loop_interval]() {
   Serial.print(" @");
   Serial.print(t);
   Serial.print(" p: ");
-  Serial.println(static_cast<int>(new_position) + 1000);
+  Serial.println(new_position);
 #endif
-  servo.writeMicroseconds(static_cast<int>(new_position) + 1000);
+  servo.Write(new_position);
   const float eps = std::numeric_limits<float>::epsilon();
   if ((t + servo_loop_interval) > (planner.GetDuration() + eps)) {
     direction = -1;
@@ -150,18 +149,19 @@ auto servo_loop = [&planner, &servo, &servo_loop_interval]() {
 
 void setup() {
   Serial.begin(115200);
+
+  motor1.Calibrate();
+  motor2.Calibrate();
+
   eeprom.Init();
   SetupSoftAP();
 
   const float shooting_interval_sec = eeprom.Read<ShootingIntervalSec>();
   planner.Init(shooting_interval_sec / 2, servo_end_position);
+  servo.Reset();
   servo_timer.sglTimeout.connect(servo_loop);
   servo_timer.start();
 
-  motor1.Calibrate();
-  motor2.Calibrate();
-
-  servo.attach(D4);
   // set the speed and acceleration
   adaptStepperSpeed(shooting_interval_sec);
   stepper.setAcceleration(200);
