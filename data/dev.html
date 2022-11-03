@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script type = "text/javascript" src = "jquery.min.js"></script>
+        <script type = "text/javascript" src="bootstrap.bundle.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="bootstrap.min.css">
+
+        <title>Badminton Feeder Control</title>
+        <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    </head>
+
+    <style>
+input[type="range"] {
+    width:300px;
+}
+    </style>
+
+    <body>
+        <div class="jumbotron jumbotron-fluid">
+            <div class="container">
+                <h1 class="lead">Badminton Feeder</h1><br>
+                <div class="form-group">
+                    <label for="left_motor_power_offset">Left motor start offset: </label>
+                    <label id="left_offset">0</label><br>
+                    <input type="range" id="left_motor_power_offset" min="0" max="500" value="0" step="1">
+
+                    <label for="right_motor_power_offset">Right motor start offset: </label>
+                    <label id="right_offset">0</label><br>
+                    <input type="range" id="right_motor_power_offset" min="0" max="500" value="0" step="1">
+                </div>
+                <div class="form-group">
+                    <label for="servo_final_position">Servo final position: </label>
+                    <label id="servo_position">0</label><br>
+                    <input type="range" id="servo_final_position" min="0" max="1" value="0.5" step="0.01">
+                </div>
+                <button type="button" class="btn btn-primary" id="apply_config">Apply</button>
+
+            </div>
+        </div>
+        <script>
+            $(document).ready(() => {
+                            $("#left_motor_power_offset").on("input", () => {
+                                            $("#left_offset").text($("#left_motor_power_offset").val());
+                                        });
+
+                            $("#right_motor_power_offset").on("input", () => {
+                                            $("#right_offset").text($("#right_motor_power_offset").val());
+                                        });
+
+                            $("#servo_final_position").on("input", () => {
+                                            $("#servo_position").text($("#servo_final_position").val());
+                                        });
+
+                            $("#apply_config").on("click", () => {
+                                            $.post("/apply_dev_config", {
+                                                            left_motor_offset: $("#left_motor_power_offset").val(),
+                                                            right_motor_offset: $("#right_motor_power_offset").val(),
+                                                            servo_final_position: $("#servo_final_position").val()
+                                                        });
+                                        });
+
+                            $.getJSON("eeprom.json", (json)=> {
+                                            console.log(json);
+                                            $("#left_motor_power_offset").val(json.left_offset);
+                                            $("#right_motor_power_offset").val(json.left_offset);
+                                            $("#servo_final_position").val(json.servo_final_position);
+
+                                            $("#left_offset").text(json.left_offset);
+                                            $("#right_offset").text(json.right_offset);
+                                            $("#servo_position").text(json.servo_final_position.toFixed(1));
+                                        });
+                        });
+        </script>
+    </body>
+
+</html>
