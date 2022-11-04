@@ -5,8 +5,19 @@ public:
                                float end_position = 500) {
     Init(duration_sec, end_position);
   }
+
+  void InitByEndPosition(float end_position) {
+    Init(duration_sec_, end_position);
+  }
+
+  void InitByDuration(float duration_sec) { Init(duration_sec, end_position_); }
+
   void Init(float duration_sec, float end_position) {
+    if (duration_sec < 0.001) { // prevent division by zero
+      duration_sec = 10;
+    }
     duration_sec_ = duration_sec;
+    end_position_ = end_position;
     const auto T = duration_sec;
     const auto T_square = T * T;
     const auto T_power_3 = T_square * T;
@@ -27,6 +38,7 @@ public:
   float GetDuration() const { return duration_sec_; }
 
 private:
+  float end_position_;
   float duration_sec_;
   float c3, c4, c5;
 };

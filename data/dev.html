@@ -15,12 +15,29 @@
 input[type="range"] {
     width:300px;
 }
+.hidden {
+display: none;
+}
     </style>
 
     <body>
         <div class="jumbotron jumbotron-fluid">
             <div class="container">
-                <h1 class="lead">Badminton Feeder Developer Mode</h1><br>
+                <h1 class="lead">Instantly Change Values: (Dangerous!)</h1><br>
+
+                <div class="form-group">
+                <div id="motors">
+                    <label for="left_motor_pwm">Left motor: </label>
+                    <label id="pwm_left">0</label><br>
+                    <input type="range" id="left_motor_pwm" min="0" max="1000" value="0" step="1"><br>
+
+                    <label for="right_motor_pwm">Right motor: </label>
+                    <label id="pwm_right">0</label><br>
+                    <input type="range" id="right_motor_pwm" min="0" max="1000" value="0" step="1"><br>
+                </div>
+                </div>
+
+                <h1 class="lead">EEPROM Data:</h1><br>
                 <div class="form-group">
                     <label for="left_motor_power_offset">Left motor start offset: </label>
                     <label id="left_offset">0</label><br>
@@ -36,11 +53,26 @@ input[type="range"] {
                     <input type="range" id="servo_final_position" min="0" max="1" value="0.5" step="0.01">
                 </div>
                 <button type="button" class="btn btn-primary" id="apply_config">Apply</button>
-
             </div>
         </div>
         <script>
             $(document).ready(() => {
+
+                            $("#left_motor_pwm").on("input", () => {
+                                            $("#pwm_left").text($("#left_motor_pwm").val());
+                                            $.post("/left_pwm", {
+                                                            left_pwm: $("#left_motor_pwm").val(),
+                                                        });
+                                        });
+                            $("#right_motor_pwm").on("input", () => {
+                                            $("#pwm_right").text($("#right_motor_pwm").val());
+                                            $.post("/right_pwm", {
+                                                            right_pwm: $("#right_motor_pwm").val(),
+                                                        });
+
+                                        });
+
+
                             $("#left_motor_power_offset").on("input", () => {
                                             $("#left_offset").text($("#left_motor_power_offset").val());
                                         });
@@ -63,13 +95,13 @@ input[type="range"] {
 
                             $.getJSON("eeprom.json", (json)=> {
                                             console.log(json);
-                                            $("#left_motor_power_offset").val(json.left_offset);
-                                            $("#right_motor_power_offset").val(json.left_offset);
-                                            $("#servo_final_position").val(json.servo_final_position);
+                                            $("#left_motor_power_offset").val(json.left_motor_offset);
+                                            $("#right_motor_power_offset").val(json.right_motor_offset);
+                                            $("#servo_final_position").val(json.servo_end_position);
 
-                                            $("#left_offset").text(json.left_offset);
-                                            $("#right_offset").text(json.right_offset);
-                                            $("#servo_position").text(json.servo_final_position.toFixed(1));
+                                            $("#left_offset").text(json.left_motor_offset);
+                                            $("#right_offset").text(json.right_motor_offset);
+                                            $("#servo_position").text(json.servo_end_position.toFixed(1));
                                         });
                         });
         </script>

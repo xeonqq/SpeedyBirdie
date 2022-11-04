@@ -13,6 +13,8 @@ public:
 
   void Write(float percentage) {
     const auto us_input = math::map(percentage, 0.0F, 1.F, us_min_, us_max_);
+    // Serial.print("servo write:");
+    // Serial.println(us_input);
     servo.writeMicroseconds(us_input);
   }
 

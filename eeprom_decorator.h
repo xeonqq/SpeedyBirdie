@@ -24,7 +24,24 @@ struct ShootingIntervalSec : EEPROMBaseType<float> {
   static constexpr char const *name = "shooting_interval_sec";
 };
 
-using EEPROMData = std::tuple<ShootingPower, ShootingIntervalSec>;
+struct LeftMotorOffset : EEPROMBaseType<uint16_t> {
+  using EEPROMBaseType<uint16_t>::EEPROMBaseType;
+  static constexpr char const *name = "left_motor_offset";
+};
+
+struct RightMotorOffset : EEPROMBaseType<uint16_t> {
+  using EEPROMBaseType<uint16_t>::EEPROMBaseType;
+  static constexpr char const *name = "right_motor_offset";
+};
+
+struct ServoEndPosition : EEPROMBaseType<float> {
+  using EEPROMBaseType<float>::EEPROMBaseType;
+  static constexpr char const *name = "servo_end_position";
+};
+
+using EEPROMData =
+    std::tuple<ShootingPower, ShootingIntervalSec, LeftMotorOffset,
+               RightMotorOffset, ServoEndPosition>;
 
 namespace detail {
 template <size_t I = 0, typename... Ts>

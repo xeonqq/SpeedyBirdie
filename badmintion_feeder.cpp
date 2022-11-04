@@ -7,6 +7,7 @@
 #include <MicroQt.h>
 
 #include "EventLoop.h"
+#include "Server.h"
 #include "config.h"
 #include "eeprom_decorator.h"
 #include "minimum_jerk_trajectory_planner.h"
@@ -27,7 +28,7 @@ AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
 const char *password = "chinasprung";
 IPAddress apIP(192, 168, 0, 1);
-FeederServo servo(D4);
+FeederServo servo(D2);
 
 EEPROMDecorator eeprom;
 
@@ -39,7 +40,6 @@ const float stepper_loop_interval = 0.02; // sec
 MicroQt::Timer stepper_timer{
     static_cast<uint32_t>(stepper_loop_interval * 1000)};
 
-float servo_end_position = 0.5;
 MinimumJerkTrajortoryPlanner planner{};
 
 void adaptStepperSpeed(float shooting_interval_sec) {
@@ -51,10 +51,20 @@ void adaptStepperSpeed(float shooting_interval_sec) {
 void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   eeprom.Write<ShootingPower>(shoot_power);
   eeprom.Write<ShootingIntervalSec>(shooting_interval_sec);
-  planner.Init(shooting_interval_sec / 2, servo_end_position);
+  planner.InitByDuration(shooting_interval_sec / 2);
   adaptStepperSpeed(shooting_interval_sec);
 
   motors.RunSpeed(shoot_power);
+};
+
+void onApplyDevConfigRequest(uint16_t left_motor_offset,
+                             uint16_t right_motor_offset,
+                             float servo_end_position) {
+  eeprom.Write<LeftMotorOffset>(left_motor_offset);
+  eeprom.Write<RightMotorOffset>(right_motor_offset);
+  eeprom.Write<ServoEndPosition>(servo_end_position);
+  motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
+  planner.InitByEndPosition(servo_end_position);
 };
 
 void handleNotFound(AsyncWebServerRequest *request) {
@@ -84,6 +94,11 @@ void ConfigureServer(AsyncWebServer &server) {
     request->send(SPIFFS, "/index.html", "text/html");
   });
 
+  server.on("/dev", HTTP_GET, [](AsyncWebServerRequest *request) {
+    Serial.println("Send dev.html.");
+    request->send(SPIFFS, "/dev.html", "text/html");
+  });
+
   server.on("/eeprom.json", HTTP_GET, [](AsyncWebServerRequest *request) {
     const auto json_str = ToJsonBuf(eeprom.ReadData());
     request->send(200, "application/json", json_str);
@@ -94,10 +109,37 @@ void ConfigureServer(AsyncWebServer &server) {
     String shooting_interval_sec = request->arg("interval"); // 0-8
     Serial.println("Current shoot power: " + shoot_power);
     Serial.println("Current shoot interval: " + shooting_interval_sec);
-    MicroQt::eventLoop.enqueueEvent([shoot_power, shooting_interval_sec]() {
+    MicroQt::eventLoop.enqueueEvent([=]() {
       onApplyConfigRequest(shoot_power.toInt(),
                            shooting_interval_sec.toFloat());
     });
+    request->send(200);
+  });
+
+  server.on("/apply_dev_config", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String left_motor_offset = request->arg("left_motor_offset");   // 0-1000
+    String right_motor_offset = request->arg("right_motor_offset"); // 0-1000
+    String servo_final_position = request->arg("servo_final_position"); // 0-1
+    Serial.println("servo final position: " + servo_final_position);
+    MicroQt::eventLoop.enqueueEvent([=]() {
+      onApplyDevConfigRequest(left_motor_offset.toInt(),
+                              right_motor_offset.toInt(),
+                              servo_final_position.toFloat());
+    });
+    request->send(200);
+  });
+
+  server.on("/left_pwm", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String left_pwm = request->arg("left_pwm"); // 0-1000
+    MicroQt::eventLoop.enqueueEvent(
+        [&motors, left_pwm]() { motors.RunSpeedRaw(0, left_pwm.toInt()); });
+    request->send(200);
+  });
+
+  server.on("/right_pwm", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String right_pwm = request->arg("right_pwm"); // 0-1000
+    MicroQt::eventLoop.enqueueEvent(
+        [&motors, right_pwm]() { motors.RunSpeedRaw(1, right_pwm.toInt()); });
     request->send(200);
   });
 
@@ -147,14 +189,20 @@ auto servo_loop = [&planner, &servo, &servo_loop_interval]() {
 
 void setup() {
   Serial.begin(115200);
-
-  motors.Calibrate();
-
   eeprom.Init();
   SetupSoftAP();
 
-  const float shooting_interval_sec = eeprom.Read<ShootingIntervalSec>();
+  motors.Init();
+  const auto left_motor_offset = eeprom.Read<LeftMotorOffset>();
+  const auto right_motor_offset = eeprom.Read<RightMotorOffset>();
+  motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
+
+  float shooting_interval_sec = eeprom.Read<ShootingIntervalSec>();
+  float servo_end_position = eeprom.Read<ServoEndPosition>();
+  shooting_interval_sec = constrain(shooting_interval_sec, 0, 10);
+  servo_end_position = constrain(servo_end_position, 0, 1);
   planner.Init(shooting_interval_sec / 2, servo_end_position);
+
   servo.Reset();
   servo_timer.sglTimeout.connect(servo_loop);
   servo_timer.start();

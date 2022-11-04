@@ -6,10 +6,7 @@ public:
     motors_[1].attach(right_motor_pin, min_microseconds_, max_microseconds_);
   }
 
-  void Calibrate() {
-    ForEach(
-        [this](auto &motor) { motor.writeMicroseconds(max_microseconds_); });
-    delay(500); // wait 1s
+  void Init() {
     ForEach(
         [this](auto &motor) { motor.writeMicroseconds(min_microseconds_); });
   }
@@ -20,6 +17,16 @@ public:
           power, 0, 1000, min_microseconds_ + offsets_[i], max_microseconds_);
       motor.writeMicroseconds(speed_microseconds);
     });
+  }
+
+  void RunSpeedRaw(uint16_t motor_index, int power) {
+    const int speed_microseconds =
+        map(power, 0, 1000, min_microseconds_, max_microseconds_);
+    motors_[motor_index].writeMicroseconds(speed_microseconds);
+  }
+
+  void SetPwmOffsets(const std::array<uint16_t, 2> &offsets) {
+    offsets_ = offsets;
   }
 
 private:
@@ -33,7 +40,7 @@ private:
   }
 
   std::array<Servo, 2> motors_{};
-  std::array<uint16_t, 2> offsets_{70, 50};
+  std::array<uint16_t, 2> offsets_{};
 
   const uint16_t max_microseconds_{2000};
   const uint16_t min_microseconds_{1000};
