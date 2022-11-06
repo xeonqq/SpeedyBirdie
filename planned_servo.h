@@ -3,17 +3,19 @@
 
 class PlannedServo : public FeederServo {
 public:
-  PlannedServo(uint16_t pin, float retreat_time_percentage = 0.2)
-      : FeederServo{pin}, retreat_time_percentage_{retreat_time_percentage} {}
+  PlannedServo(uint16_t pin, float push_time)
+      : FeederServo{pin}, push_time_{push_time} {}
 
   void Plan(float now) {
     now = std::fmod(now, GetIntervalDurationSec());
     float new_position;
     const auto pushing_time = GetPushingTime();
-    if (now < pushing_time) {
-      new_position = planner_pusher_.Plan(now);
-    }
-    if (now >= pushing_time) {
+    const auto idle_time = GetIdleTime();
+    if (now < idle_time) {
+      new_position = planner_pusher_.Plan(0);
+    } else if (now < (idle_time + pushing_time)) {
+      new_position = planner_pusher_.Plan(now - idle_time);
+    } else if (now < GetIntervalDurationSec()) {
       const auto t = (GetIntervalDurationSec() - now);
       // need to go reverse as the planner
       new_position = planner_retreat_.Plan(t);
@@ -31,6 +33,7 @@ public:
   }
 
   void Init(float interval_duration_sec, float end_position) {
+    push_time_ = std::min(interval_duration_sec / 2, push_time_);
     interval_duration_sec_ = interval_duration_sec;
 
     planner_pusher_.Init(GetPushingTime(), end_position);
@@ -39,16 +42,14 @@ public:
 
   float GetIntervalDurationSec() const { return interval_duration_sec_; }
 
-  float GetPushingTime() const {
-    return interval_duration_sec_ * (1.0 - retreat_time_percentage_);
-  }
-  float GetRetreatTime() const {
-    return interval_duration_sec_ * (retreat_time_percentage_);
-  }
+  float GetPushingTime() const { return push_time_; }
+  float GetRetreatTime() const { return push_time_; }
+
+  float GetIdleTime() const { return interval_duration_sec_ - 2 * push_time_; }
 
 private:
   MinimumJerkTrajortoryPlanner planner_pusher_{};
   MinimumJerkTrajortoryPlanner planner_retreat_{};
   float interval_duration_sec_{};
-  float retreat_time_percentage_{};
+  float push_time_{};
 };

@@ -27,7 +27,7 @@ AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
 const char *password = "chinasprung";
 IPAddress apIP(192, 168, 0, 1);
-PlannedServo planned_servo{D2, 0.2};
+PlannedServo planned_servo{D2, 0.5};
 
 EEPROMDecorator eeprom;
 
