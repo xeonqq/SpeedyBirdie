@@ -10,9 +10,8 @@
 #include "Server.h"
 #include "config.h"
 #include "eeprom_decorator.h"
-#include "minimum_jerk_trajectory_planner.h"
 #include "motor_composite.h"
-#include "servo.h"
+#include "planned_servo.h"
 
 #define IN1 1
 #define IN2 3
@@ -28,7 +27,7 @@ AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
 const char *password = "chinasprung";
 IPAddress apIP(192, 168, 0, 1);
-FeederServo servo(D2);
+PlannedServo planned_servo{D2, 0.2};
 
 EEPROMDecorator eeprom;
 
@@ -40,8 +39,6 @@ const float stepper_loop_interval = 0.02; // sec
 MicroQt::Timer stepper_timer{
     static_cast<uint32_t>(stepper_loop_interval * 1000)};
 
-MinimumJerkTrajortoryPlanner planner{};
-
 void adaptStepperSpeed(float shooting_interval_sec) {
   const auto speed = stepper_config.GetSpeedStepsPerSec(shooting_interval_sec);
   stepper.setMaxSpeed(speed * 2);
@@ -51,7 +48,7 @@ void adaptStepperSpeed(float shooting_interval_sec) {
 void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   eeprom.Write<ShootingPower>(shoot_power);
   eeprom.Write<ShootingIntervalSec>(shooting_interval_sec);
-  planner.InitByDuration(shooting_interval_sec / 2);
+  planned_servo.InitByDuration(shooting_interval_sec);
   adaptStepperSpeed(shooting_interval_sec);
 
   motors.RunSpeed(shoot_power);
@@ -64,7 +61,7 @@ void onApplyDevConfigRequest(uint16_t left_motor_offset,
   eeprom.Write<RightMotorOffset>(right_motor_offset);
   eeprom.Write<ServoEndPosition>(servo_end_position);
   motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
-  planner.InitByEndPosition(servo_end_position);
+  planned_servo.InitByEndPosition(servo_end_position);
 };
 
 void handleNotFound(AsyncWebServerRequest *request) {
@@ -163,28 +160,10 @@ void SetupSoftAP() {
   ConfigureServer(server);
 }
 
-auto servo_loop = [&planner, &servo, &servo_loop_interval]() {
+auto servo_loop = [&planned_servo, &servo_loop_interval]() {
   static float t = 0;
-  static int direction = 1;
-
-  const auto new_position = planner.Plan(t);
-#ifdef DEBUG_SERVO
-  Serial.print(" @");
-  Serial.print(t);
-  Serial.print(" p: ");
-  Serial.println(new_position);
-#endif
-  servo.Write(new_position);
-  const float eps = std::numeric_limits<float>::epsilon();
-  if ((t + servo_loop_interval) > (planner.GetDuration() + eps)) {
-    direction = -1;
-    t = planner.GetDuration() - servo_loop_interval;
-  } else if ((t - servo_loop_interval) < -eps) {
-    direction = 1;
-    t = servo_loop_interval;
-  } else {
-    t += servo_loop_interval * direction;
-  }
+  planned_servo.Plan(t);
+  t += servo_loop_interval;
 };
 
 void setup() {
@@ -199,11 +178,11 @@ void setup() {
 
   float shooting_interval_sec = eeprom.Read<ShootingIntervalSec>();
   float servo_end_position = eeprom.Read<ServoEndPosition>();
-  shooting_interval_sec = constrain(shooting_interval_sec, 0, 10);
+  shooting_interval_sec = constrain(shooting_interval_sec, 1, 10);
   servo_end_position = constrain(servo_end_position, 0, 1);
-  planner.Init(shooting_interval_sec / 2, servo_end_position);
+  planned_servo.Init(shooting_interval_sec, servo_end_position);
 
-  servo.Reset();
+  planned_servo.Reset();
   servo_timer.sglTimeout.connect(servo_loop);
   servo_timer.start();
 

@@ -36,6 +36,7 @@ public:
     return t_power_3 * (c3 + c4 * t + c5 * t_power_2);
   }
   float GetDuration() const { return duration_sec_; }
+  float GetEndPosition() const { return end_position_; }
 
 private:
   float end_position_;
