@@ -50,6 +50,7 @@ void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   eeprom.Write<ShootingPower>(shoot_power);
   eeprom.Write<ShootingIntervalSec>(shooting_interval_sec);
   planned_servo.InitByDuration(shooting_interval_sec);
+  ball_release_servo.InitByDuration(shooting_interval_sec);
   adaptStepperSpeed(shooting_interval_sec);
 
   motors.RunSpeed(shoot_power);
@@ -57,12 +58,15 @@ void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
 
 void onApplyDevConfigRequest(uint16_t left_motor_offset,
                              uint16_t right_motor_offset,
-                             float servo_end_position) {
+                             float servo_end_position,
+                             float ball_release_servo_end_position) {
   eeprom.Write<LeftMotorOffset>(left_motor_offset);
   eeprom.Write<RightMotorOffset>(right_motor_offset);
   eeprom.Write<ServoEndPosition>(servo_end_position);
+  eeprom.Write<BallReleaseServoEndPosition>(ball_release_servo_end_position);
   motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
   planned_servo.InitByEndPosition(servo_end_position);
+  ball_release_servo.InitByEndPosition(ball_release_servo_end_position);
 };
 
 void handleNotFound(AsyncWebServerRequest *request) {
@@ -118,11 +122,14 @@ void ConfigureServer(AsyncWebServer &server) {
     String left_motor_offset = request->arg("left_motor_offset");   // 0-1000
     String right_motor_offset = request->arg("right_motor_offset"); // 0-1000
     String servo_final_position = request->arg("servo_final_position"); // 0-1
+    String ball_release_servo_final_position =
+        request->arg("ball_release_servo_final_position"); // 0-1
     Serial.println("servo final position: " + servo_final_position);
     MicroQt::eventLoop.enqueueEvent([=]() {
       onApplyDevConfigRequest(left_motor_offset.toInt(),
                               right_motor_offset.toInt(),
-                              servo_final_position.toFloat());
+                              servo_final_position.toFloat(),
+                              ball_release_servo_final_position.toFloat());
     });
     request->send(200);
   });
@@ -185,8 +192,6 @@ void setup() {
   const auto right_motor_offset = eeprom.Read<RightMotorOffset>();
   motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
 
-  ball_release_servo.Reset();
-
   float shooting_interval_sec = eeprom.Read<ShootingIntervalSec>();
   float servo_end_position = eeprom.Read<ServoEndPosition>();
   shooting_interval_sec = constrain(shooting_interval_sec, 1, 10);
@@ -196,6 +201,14 @@ void setup() {
   planned_servo.Reset();
   servo_timer.sglTimeout.connect(servo_loop);
   servo_timer.start();
+
+  float ball_release_servo_end_position =
+      eeprom.Read<BallReleaseServoEndPosition>();
+  ball_release_servo_end_position =
+      constrain(ball_release_servo_end_position, 0, 0.4);
+  ball_release_servo.Reset();
+  ball_release_servo.Init(shooting_interval_sec,
+                          ball_release_servo_end_position);
 
   // set the speed and acceleration
   adaptStepperSpeed(shooting_interval_sec);

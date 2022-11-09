@@ -56,6 +56,11 @@ display: none;
                     <label id="servo_position">0.5</label><br>
                     <input type="range" id="servo_final_position" min="0" max="1" value="0.5" step="0.01">
                 </div>
+                <div class="form-group">
+                    <label for="ball_release_servo_final_position">Ball release servo final position: </label>
+                    <label id="ball_release_servo_final_position_text">0</label><br>
+                    <input type="range" id="ball_release_servo_final_position" min="0" max="0.5" value="0.0" step="0.01">
+                </div>
                 <button type="button" class="btn btn-primary" id="apply_config">Apply</button>
             </div>
         </div>
@@ -94,11 +99,16 @@ display: none;
                                             $("#servo_position").text($("#servo_final_position").val());
                                         });
 
+                            $("#ball_release_servo_final_position").on("input", () => {
+                                            $("#ball_release_servo_final_position_text").text($("#ball_release_servo_final_position").val());
+                                        });
+
                             $("#apply_config").on("click", () => {
                                             $.post("/apply_dev_config", {
                                                             left_motor_offset: $("#left_motor_power_offset").val(),
                                                             right_motor_offset: $("#right_motor_power_offset").val(),
-                                                            servo_final_position: $("#servo_final_position").val()
+                                                            servo_final_position: $("#servo_final_position").val(),
+                                                            ball_release_servo_final_position: $("#ball_release_servo_final_position").val()
                                                         });
                                         });
 
@@ -107,10 +117,12 @@ display: none;
                                             $("#left_motor_power_offset").val(json.left_motor_offset);
                                             $("#right_motor_power_offset").val(json.right_motor_offset);
                                             $("#servo_final_position").val(json.servo_end_position);
+                                            $("#ball_release_servo_final_position").val(json.ball_release_servo_end_position);
 
                                             $("#left_offset").text(json.left_motor_offset);
                                             $("#right_offset").text(json.right_motor_offset);
-                                            $("#servo_position").text(json.servo_end_position.toFixed(1));
+                                            $("#servo_position").text(json.servo_end_position.toFixed(2));
+                                            $("#ball_release_servo_final_position_text").text(json.ball_release_servo_end_position.toFixed(2));
                                         });
                         });
         </script>
