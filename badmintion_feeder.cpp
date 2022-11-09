@@ -28,6 +28,7 @@ const char *ssid = "BirdyFeeder";
 const char *password = "chinasprung";
 IPAddress apIP(192, 168, 0, 1);
 PlannedServo planned_servo{D2, 0.5};
+PlannedServo ball_release_servo{D5, 0.5, 1000, 2000};
 
 EEPROMDecorator eeprom;
 
@@ -140,6 +141,14 @@ void ConfigureServer(AsyncWebServer &server) {
     request->send(200);
   });
 
+  server.on("/servo_pwm", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String servo_pwm = request->arg("servo_pwm"); // 0-1
+    MicroQt::eventLoop.enqueueEvent([&ball_release_servo, servo_pwm]() {
+      ball_release_servo.Write(servo_pwm.toFloat());
+    });
+    request->send(200);
+  });
+
   server.onNotFound(handleNotFound);
   // Send Favicon
   server.serveStatic("/favicon.ico", SPIFFS, "/favicon.ico");
@@ -175,6 +184,8 @@ void setup() {
   const auto left_motor_offset = eeprom.Read<LeftMotorOffset>();
   const auto right_motor_offset = eeprom.Read<RightMotorOffset>();
   motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
+
+  ball_release_servo.Reset();
 
   float shooting_interval_sec = eeprom.Read<ShootingIntervalSec>();
   float servo_end_position = eeprom.Read<ServoEndPosition>();

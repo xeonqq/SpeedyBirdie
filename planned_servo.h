@@ -3,8 +3,9 @@
 
 class PlannedServo : public FeederServo {
 public:
-  PlannedServo(uint16_t pin, float push_time)
-      : FeederServo{pin}, push_time_{push_time} {}
+  PlannedServo(uint16_t pin, float push_time, int us_min = 800,
+               int us_max = 2700)
+      : FeederServo{pin, us_min, us_max}, push_time_{push_time} {}
 
   void Plan(float now) {
     now = std::fmod(now, GetIntervalDurationSec());

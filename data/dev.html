@@ -34,6 +34,10 @@ display: none;
                     <label for="right_motor_pwm">Right motor: </label>
                     <label id="pwm_right">0</label><br>
                     <input type="range" id="right_motor_pwm" min="0" max="1000" value="0" step="1"><br>
+
+                    <label for="servo_pwm">Servo: </label>
+                    <label id="servo_pwm_text">0</label><br>
+                    <input type="range" id="servo_pwm" min="0" max="1.0" value="0" step="0.01"><br>
                 </div>
                 </div>
 
@@ -69,9 +73,14 @@ display: none;
                                             $.post("/right_pwm", {
                                                             right_pwm: $("#right_motor_pwm").val(),
                                                         });
-
                                         });
 
+                            $("#servo_pwm").on("input", () => {
+                                            $("#servo_pwm_text").text($("#servo_pwm").val());
+                                            $.post("/servo_pwm", {
+                                                            servo_pwm: $("#servo_pwm").val(),
+                                                        });
+                                        });
 
                             $("#left_motor_power_offset").on("input", () => {
                                             $("#left_offset").text($("#left_motor_power_offset").val());
