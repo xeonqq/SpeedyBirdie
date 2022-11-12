@@ -1,7 +1,6 @@
 namespace math {
 
-template <typename T, typename U>
-T map(T x, T in_min, T in_max, U out_min, U out_max) {
+float map(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 } // namespace math

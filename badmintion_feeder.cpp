@@ -11,17 +11,13 @@
 #include "motor_composite.h"
 #include "planned_servo.h"
 
-#define IN1 1
-#define IN2 3
-#define IN3 15
-#define IN4 13
-
 Motors motors{D0, D1};
 
 AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
 const char *password = "chinasprung";
 IPAddress apIP(192, 168, 0, 1);
+
 PlannedServo planned_servo{D6, 0.5, 1000, 2000};
 PlannedServo ball_release_servo{D5, 0.5, 1000, 2000};
 
@@ -69,13 +65,8 @@ void onStartFeeding() {
 void onStopFeeding() {
   servo_timer.stop();
   ball_release_timer.stop();
-
-  float ball_release_servo_start_position =
-      eeprom.Read<BallReleaseServoStartPosition>();
-  ball_release_servo_start_position =
-      constrain(ball_release_servo_start_position, 0, 1);
-  ball_release_servo.Write(ball_release_servo_start_position);
-  planned_servo.Reset();
+  ball_release_servo.InitSmoothen();
+  planned_servo.InitSmoothen();
 }
 
 void handleNotFound(AsyncWebServerRequest *request) {
@@ -224,7 +215,6 @@ void setup() {
   shooting_interval_sec = constrain(shooting_interval_sec, 1, 10);
   servo_end_position = constrain(servo_end_position, 0, 1);
 
-  planned_servo.Reset();
   planned_servo.Init(shooting_interval_sec, 0, servo_end_position);
   servo_timer.sglTimeout.connect(servo_loop);
 
@@ -232,7 +222,6 @@ void setup() {
       eeprom.Read<BallReleaseServoStartPosition>();
   ball_release_servo_start_position =
       constrain(ball_release_servo_start_position, 0, 1);
-  ball_release_servo.Write(ball_release_servo_start_position);
   ball_release_servo.Init(shooting_interval_sec,
                           ball_release_servo_start_position,
                           FeederServo::GetNetualPositionPercentage());

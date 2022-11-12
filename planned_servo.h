@@ -1,5 +1,6 @@
 #include "planner_adapter.h"
 #include "servo.h"
+#include <MicroQt.h>
 
 class PlannedServo : public FeederServo {
 public:
@@ -27,6 +28,7 @@ public:
   void InitByStartAndEnd(float start_value, float end_value) {
     planner_pusher_.InitByStartAndEnd(start_value, end_value);
     planner_retreat_.InitByStartAndEnd(end_value, start_value);
+    InitSmoothen();
   }
 
   void InitByDuration(float duration_sec) {
@@ -39,6 +41,11 @@ public:
 
     planner_pusher_.Init(GetPushingTime(), start_value, end_value);
     planner_retreat_.Init(GetRetreatTime(), end_value, start_value);
+    InitSmoothen();
+  }
+
+  void InitSmoothen() {
+    MicroQt::eventLoop.enqueueEvent([this]() { WaitForSmoothen(); });
   }
 
   float GetIntervalDurationSec() const { return interval_duration_sec_; }
@@ -49,6 +56,28 @@ public:
   float GetIdleTime() const { return interval_duration_sec_ - 2 * push_time_; }
 
 private:
+  void WaitForSmoothen() {
+    MicroQt::Synchronizer synchronizer;
+    float start = FeederServo::ReadPercentage();
+    float end = planner_pusher_.GetStart();
+    float duration = 2.F;
+    PlannerAdapter planner_smoothen;
+    planner_smoothen.Init(duration, start, end);
+    float t = 0;
+    float dt = 0.02;
+    MicroQt::Timer timer;
+    auto conn = timer.sglTimeout.connect([&]() {
+      FeederServo::Write(planner_smoothen.Plan(t));
+      t += dt;
+      if (t > planner_smoothen.GetDuration()) {
+        synchronizer.exit(1);
+      }
+    });
+    timer.start(dt * 1000);
+    synchronizer.exec();
+    timer.sglTimeout.disconnect(conn);
+  }
+
   PlannerAdapter planner_pusher_{};
   PlannerAdapter planner_retreat_{};
   float interval_duration_sec_{};
