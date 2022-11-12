@@ -39,17 +39,20 @@ void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
 void onApplyDevConfigRequest(uint16_t left_motor_offset,
                              uint16_t right_motor_offset,
                              float servo_end_position,
-                             float ball_release_servo_start_position) {
+                             float ball_release_servo_start_position,
+                             float ball_release_to_push_time_delay) {
   eeprom.Write<LeftMotorOffset>(left_motor_offset);
   eeprom.Write<RightMotorOffset>(right_motor_offset);
   eeprom.Write<ServoEndPosition>(servo_end_position);
   eeprom.Write<BallReleaseServoStartPosition>(
       ball_release_servo_start_position);
+  eeprom.Write<BallReleaseToPushTimeDelay>(ball_release_to_push_time_delay);
   motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
   planned_servo.InitByStartAndEnd(0, servo_end_position);
   ball_release_servo.InitByStartAndEnd(
       ball_release_servo_start_position,
       FeederServo::GetNetualPositionPercentage());
+  ball_release_to_push_delay = ball_release_to_push_time_delay;
 };
 
 void onStartFeeding() { servo_timer.start(); }
@@ -116,12 +119,15 @@ void ConfigureServer(AsyncWebServer &server) {
     String servo_final_position = request->arg("servo_final_position"); // 0-1
     String ball_release_servo_final_position =
         request->arg("ball_release_servo_final_position"); // 0-1
+    String ball_release_to_push_time_delay =
+        request->arg("ball_release_to_push_time_delay"); // 0-2
     Serial.println("servo final position: " + servo_final_position);
     MicroQt::eventLoop.enqueueEvent([=]() {
       onApplyDevConfigRequest(left_motor_offset.toInt(),
                               right_motor_offset.toInt(),
                               servo_final_position.toFloat(),
-                              ball_release_servo_final_position.toFloat());
+                              ball_release_servo_final_position.toFloat(),
+                              ball_release_to_push_time_delay.toFloat());
     });
     request->send(200);
   });
@@ -211,6 +217,8 @@ void setup() {
   ball_release_servo.Init(shooting_interval_sec,
                           ball_release_servo_start_position,
                           FeederServo::GetNetualPositionPercentage());
+
+  ball_release_to_push_delay = eeprom.Read<BallReleaseToPushTimeDelay>();
 
   servo_timer.sglTimeout.connect(servo_loop);
 

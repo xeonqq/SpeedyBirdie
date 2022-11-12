@@ -44,9 +44,15 @@ struct BallReleaseServoStartPosition : EEPROMBaseType<float> {
   static constexpr char const *name = "ball_release_servo_start_position";
 };
 
-using EEPROMData = std::tuple<ShootingPower, ShootingIntervalSec,
-                              LeftMotorOffset, RightMotorOffset,
-                              ServoEndPosition, BallReleaseServoStartPosition>;
+struct BallReleaseToPushTimeDelay : EEPROMBaseType<float> {
+  using EEPROMBaseType<float>::EEPROMBaseType;
+  static constexpr char const *name = "ball_release_to_push_time_delay";
+};
+
+using EEPROMData =
+    std::tuple<ShootingPower, ShootingIntervalSec, LeftMotorOffset,
+               RightMotorOffset, ServoEndPosition,
+               BallReleaseServoStartPosition, BallReleaseToPushTimeDelay>;
 
 namespace detail {
 template <size_t I = 0, typename... Ts>
