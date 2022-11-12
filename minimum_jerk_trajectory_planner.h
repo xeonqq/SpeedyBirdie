@@ -1,8 +1,8 @@
 #include <algorithm>
 class MinimumJerkTrajortoryPlanner {
 public:
-  MinimumJerkTrajortoryPlanner(float duration_sec = 5,
-                               float end_position = 500) {
+  MinimumJerkTrajortoryPlanner(float duration_sec = 5.0,
+                               float end_position = 1.0) {
     Init(duration_sec, end_position);
   }
 

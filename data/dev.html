@@ -59,7 +59,7 @@ display: none;
                 <div class="form-group">
                     <label for="ball_release_servo_final_position">Ball release servo final position: </label>
                     <label id="ball_release_servo_final_position_text">0</label><br>
-                    <input type="range" id="ball_release_servo_final_position" min="0" max="0.5" value="0.0" step="0.01">
+                    <input type="range" id="ball_release_servo_final_position" min="0" max="1" value="0.0" step="0.01">
                 </div>
                 <button type="button" class="btn btn-primary" id="apply_config">Apply</button>
             </div>
@@ -117,12 +117,12 @@ display: none;
                                             $("#left_motor_power_offset").val(json.left_motor_offset);
                                             $("#right_motor_power_offset").val(json.right_motor_offset);
                                             $("#servo_final_position").val(json.servo_end_position);
-                                            $("#ball_release_servo_final_position").val(json.ball_release_servo_end_position);
+                                            $("#ball_release_servo_final_position").val(json.ball_release_servo_start_position);
 
                                             $("#left_offset").text(json.left_motor_offset);
                                             $("#right_offset").text(json.right_motor_offset);
                                             $("#servo_position").text(json.servo_end_position.toFixed(2));
-                                            $("#ball_release_servo_final_position_text").text(json.ball_release_servo_end_position.toFixed(2));
+                                            $("#ball_release_servo_final_position_text").text(json.ball_release_servo_start_position.toFixed(2));
                                         });
                         });
         </script>

@@ -39,14 +39,14 @@ struct ServoEndPosition : EEPROMBaseType<float> {
   static constexpr char const *name = "servo_end_position";
 };
 
-struct BallReleaseServoEndPosition : EEPROMBaseType<float> {
+struct BallReleaseServoStartPosition : EEPROMBaseType<float> {
   using EEPROMBaseType<float>::EEPROMBaseType;
-  static constexpr char const *name = "ball_release_servo_end_position";
+  static constexpr char const *name = "ball_release_servo_start_position";
 };
 
-using EEPROMData =
-    std::tuple<ShootingPower, ShootingIntervalSec, LeftMotorOffset,
-               RightMotorOffset, ServoEndPosition, BallReleaseServoEndPosition>;
+using EEPROMData = std::tuple<ShootingPower, ShootingIntervalSec,
+                              LeftMotorOffset, RightMotorOffset,
+                              ServoEndPosition, BallReleaseServoStartPosition>;
 
 namespace detail {
 template <size_t I = 0, typename... Ts>

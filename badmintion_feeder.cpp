@@ -27,7 +27,7 @@ AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
 const char *password = "chinasprung";
 IPAddress apIP(192, 168, 0, 1);
-PlannedServo planned_servo{D2, 0.5};
+PlannedServo planned_servo{D6, 0.5, 1000, 2000};
 PlannedServo ball_release_servo{D5, 0.5, 1000, 2000};
 
 EEPROMDecorator eeprom;
@@ -35,6 +35,8 @@ EEPROMDecorator eeprom;
 const float servo_loop_interval = 0.02;        // sec
 const float servo_end_position_duration = 3.0; // sec;
 MicroQt::Timer servo_timer{static_cast<uint32_t>(servo_loop_interval * 1000)};
+MicroQt::Timer ball_release_timer{
+    static_cast<uint32_t>(servo_loop_interval * 1000)};
 
 const float stepper_loop_interval = 0.02; // sec
 MicroQt::Timer stepper_timer{
@@ -59,14 +61,15 @@ void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
 void onApplyDevConfigRequest(uint16_t left_motor_offset,
                              uint16_t right_motor_offset,
                              float servo_end_position,
-                             float ball_release_servo_end_position) {
+                             float ball_release_servo_start_position) {
   eeprom.Write<LeftMotorOffset>(left_motor_offset);
   eeprom.Write<RightMotorOffset>(right_motor_offset);
   eeprom.Write<ServoEndPosition>(servo_end_position);
-  eeprom.Write<BallReleaseServoEndPosition>(ball_release_servo_end_position);
+  eeprom.Write<BallReleaseServoStartPosition>(
+      ball_release_servo_start_position);
   motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
-  planned_servo.InitByEndPosition(servo_end_position);
-  ball_release_servo.InitByEndPosition(ball_release_servo_end_position);
+  planned_servo.InitByStartAndEnd(0, servo_end_position);
+  ball_release_servo.InitByStartAndEnd(ball_release_servo_start_position, 0.5);
 };
 
 void handleNotFound(AsyncWebServerRequest *request) {
@@ -182,6 +185,14 @@ auto servo_loop = [&planned_servo, &servo_loop_interval]() {
   t += servo_loop_interval;
 };
 
+auto ball_release_loop = [&ball_release_servo, &servo_loop_interval]() {
+  static float t = 0;
+  ball_release_servo.Plan(t);
+  t += servo_loop_interval;
+};
+
+MicroQt::Timer timer_next_event;
+
 void setup() {
   Serial.begin(115200);
   eeprom.Init();
@@ -196,19 +207,26 @@ void setup() {
   float servo_end_position = eeprom.Read<ServoEndPosition>();
   shooting_interval_sec = constrain(shooting_interval_sec, 1, 10);
   servo_end_position = constrain(servo_end_position, 0, 1);
-  planned_servo.Init(shooting_interval_sec, servo_end_position);
 
   planned_servo.Reset();
+  planned_servo.Init(shooting_interval_sec, 0, servo_end_position);
   servo_timer.sglTimeout.connect(servo_loop);
   servo_timer.start();
 
-  float ball_release_servo_end_position =
-      eeprom.Read<BallReleaseServoEndPosition>();
-  ball_release_servo_end_position =
-      constrain(ball_release_servo_end_position, 0, 0.4);
-  ball_release_servo.Reset();
+  float ball_release_servo_start_position =
+      eeprom.Read<BallReleaseServoStartPosition>();
+  ball_release_servo_start_position =
+      constrain(ball_release_servo_start_position, 0, 1);
+  ball_release_servo.Write(ball_release_servo_start_position);
   ball_release_servo.Init(shooting_interval_sec,
-                          ball_release_servo_end_position);
+                          ball_release_servo_start_position, 0.5);
+  ball_release_timer.sglTimeout.connect(ball_release_loop);
+  ball_release_timer.start();
+
+  /*  timer_next_event.sglTimeout.connect(*/
+  /*[&servo_timer]() { servo_timer.start(); });*/
+  /*timer_next_event.setSingleShot(true);*/
+  /*timer_next_event.start(ball_release_servo.GetPushingTime());*/
 
   // set the speed and acceleration
   adaptStepperSpeed(shooting_interval_sec);

@@ -15,14 +15,14 @@ public:
     ForEachI([&](uint16_t i, auto &motor) {
       const int speed_microseconds = map(
           power, 0, 1000, min_microseconds_ + offsets_[i], max_microseconds_);
-      motor.writeMicroseconds(speed_microseconds);
+      motor.writeMicroseconds(ConstrainPWM(speed_microseconds));
     });
   }
 
   void RunSpeedRaw(uint16_t motor_index, int power) {
     const int speed_microseconds =
         map(power, 0, 1000, min_microseconds_, max_microseconds_);
-    motors_[motor_index].writeMicroseconds(speed_microseconds);
+    motors_[motor_index].writeMicroseconds(ConstrainPWM(speed_microseconds));
   }
 
   void SetPwmOffsets(const std::array<uint16_t, 2> &offsets) {
@@ -30,6 +30,10 @@ public:
   }
 
 private:
+  int ConstrainPWM(int value) {
+    return constrain(value, min_microseconds_, max_microseconds_);
+  }
+
   template <typename Func> void ForEachI(Func &&func) {
     for (auto i = 0; i < motors_.size(); ++i) {
       std::forward<Func>(func)(i, motors_[i]);
