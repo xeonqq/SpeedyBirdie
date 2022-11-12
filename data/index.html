@@ -32,8 +32,18 @@ input[type="range"] {
                     <label for="shooting_interval_range">&nbsp;second</label><br>
                     <input type="range" id="shooting_interval_range" min="1" max="8" value="8" step="0.1">
                 </div>
-                <button type="button" class="btn btn-primary" id="apply_config">Apply</button>
 
+            <div class="d-grid gap-2  mx-auto">
+                <button type="button" class="btn btn-secondary" id="apply_config">Save Config</button>
+                </div>
+                <br>
+                <hr class="hr" />
+                <div class="form-group">
+                    <div class="d-grid gap-2  mx-auto">
+                        <button type="button" class="btn btn-primary btn-lg" id="start_feed">Start Feeding!</button>
+                        <button type="button" class="btn btn-outline-danger btn-lg" id="stop_feed">Stop</button>
+                    </div>
+                </div>
             </div>
         </div>
         <script>
@@ -50,6 +60,14 @@ input[type="range"] {
                                             $.post("/apply_config", {
                                                             power: $("#power_range").val(),
                                                             interval: $("#shooting_interval_range").val()
+                                                        });
+                                        });
+                            $("#start_feed").on("click", () => {
+                                            $.post("/start", {
+                                                        });
+                                        });
+                            $("#stop_feed").on("click", () => {
+                                            $.post("/stop", {
                                                         });
                                         });
 

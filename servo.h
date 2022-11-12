@@ -24,6 +24,8 @@ public:
     servo.writeMicroseconds(ConstrainPWM(us));
   }
 
+  int ReadMicroseconds() { servo.readMicroseconds(); }
+
 private:
   int ConstrainPWM(int value) { return constrain(value, us_min_, us_max_); }
   int us_min_;

@@ -2,7 +2,6 @@
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
-#include <AccelStepper.h>
 #include <ESP_EEPROM.h>
 #include <MicroQt.h>
 
@@ -20,7 +19,6 @@
 
 StepperConfig stepper_config{200};
 
-AccelStepper stepper(AccelStepper::HALF4WIRE, IN1, IN2, IN3, IN4);
 Motors motors{D0, D1};
 
 AsyncWebServer server(80);
@@ -42,19 +40,11 @@ const float stepper_loop_interval = 0.02; // sec
 MicroQt::Timer stepper_timer{
     static_cast<uint32_t>(stepper_loop_interval * 1000)};
 
-void adaptStepperSpeed(float shooting_interval_sec) {
-  const auto speed = stepper_config.GetSpeedStepsPerSec(shooting_interval_sec);
-  stepper.setMaxSpeed(speed * 2);
-  stepper.setSpeed(speed);
-}
-
 void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   eeprom.Write<ShootingPower>(shoot_power);
   eeprom.Write<ShootingIntervalSec>(shooting_interval_sec);
   planned_servo.InitByDuration(shooting_interval_sec);
   ball_release_servo.InitByDuration(shooting_interval_sec);
-  adaptStepperSpeed(shooting_interval_sec);
-
   motors.RunSpeed(shoot_power);
 };
 
@@ -71,6 +61,23 @@ void onApplyDevConfigRequest(uint16_t left_motor_offset,
   planned_servo.InitByStartAndEnd(0, servo_end_position);
   ball_release_servo.InitByStartAndEnd(ball_release_servo_start_position, 0.5);
 };
+
+void onStartFeeding() {
+  servo_timer.start();
+  ball_release_timer.start();
+}
+
+void onStopFeeding() {
+  servo_timer.stop();
+  ball_release_timer.stop();
+
+  float ball_release_servo_start_position =
+      eeprom.Read<BallReleaseServoStartPosition>();
+  ball_release_servo_start_position =
+      constrain(ball_release_servo_start_position, 0, 1);
+  ball_release_servo.Write(ball_release_servo_start_position);
+  planned_servo.Reset();
+}
 
 void handleNotFound(AsyncWebServerRequest *request) {
   String path = request->url();
@@ -159,6 +166,16 @@ void ConfigureServer(AsyncWebServer &server) {
     request->send(200);
   });
 
+  server.on("/start", HTTP_POST, [](AsyncWebServerRequest *request) {
+    MicroQt::eventLoop.enqueueEvent(onStartFeeding);
+    request->send(200);
+  });
+
+  server.on("/stop", HTTP_POST, [](AsyncWebServerRequest *request) {
+    MicroQt::eventLoop.enqueueEvent(onStopFeeding);
+    request->send(200);
+  });
+
   server.onNotFound(handleNotFound);
   // Send Favicon
   server.serveStatic("/favicon.ico", SPIFFS, "/favicon.ico");
@@ -211,7 +228,6 @@ void setup() {
   planned_servo.Reset();
   planned_servo.Init(shooting_interval_sec, 0, servo_end_position);
   servo_timer.sglTimeout.connect(servo_loop);
-  servo_timer.start();
 
   float ball_release_servo_start_position =
       eeprom.Read<BallReleaseServoStartPosition>();
@@ -221,22 +237,11 @@ void setup() {
   ball_release_servo.Init(shooting_interval_sec,
                           ball_release_servo_start_position, 0.5);
   ball_release_timer.sglTimeout.connect(ball_release_loop);
-  ball_release_timer.start();
 
   /*  timer_next_event.sglTimeout.connect(*/
   /*[&servo_timer]() { servo_timer.start(); });*/
   /*timer_next_event.setSingleShot(true);*/
   /*timer_next_event.start(ball_release_servo.GetPushingTime());*/
-
-  // set the speed and acceleration
-  adaptStepperSpeed(shooting_interval_sec);
-  stepper.setAcceleration(200);
-
-  stepper_timer.sglTimeout.connect([&stepper_config, &stepper]() {
-    stepper.move(stepper_config.GetStepsPerRevolution() * 4);
-    stepper.run();
-  });
-  stepper_timer.start();
 }
 
 void loop() { MicroQt::eventLoop.exec(); }
