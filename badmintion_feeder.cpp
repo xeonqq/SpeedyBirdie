@@ -56,7 +56,9 @@ void onApplyDevConfigRequest(uint16_t left_motor_offset,
       ball_release_servo_start_position);
   motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
   planned_servo.InitByStartAndEnd(0, servo_end_position);
-  ball_release_servo.InitByStartAndEnd(ball_release_servo_start_position, 0.5);
+  ball_release_servo.InitByStartAndEnd(
+      ball_release_servo_start_position,
+      FeederServo::GetNetualPositionPercentage());
 };
 
 void onStartFeeding() {
@@ -232,7 +234,8 @@ void setup() {
       constrain(ball_release_servo_start_position, 0, 1);
   ball_release_servo.Write(ball_release_servo_start_position);
   ball_release_servo.Init(shooting_interval_sec,
-                          ball_release_servo_start_position, 0.5);
+                          ball_release_servo_start_position,
+                          FeederServo::GetNetualPositionPercentage());
   ball_release_timer.sglTimeout.connect(ball_release_loop);
 
   /*  timer_next_event.sglTimeout.connect(*/

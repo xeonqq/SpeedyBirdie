@@ -17,6 +17,7 @@ public:
     // Serial.println(us_input);
     WriteMicroseconds(us_input);
   }
+  static float GetNetualPositionPercentage() { return 0.5; }
 
   void WriteMicroseconds(uint16_t us) {
     // Serial.print("servo write:");
