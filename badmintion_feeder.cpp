@@ -7,7 +7,6 @@
 
 #include "EventLoop.h"
 #include "Server.h"
-#include "config.h"
 #include "eeprom_decorator.h"
 #include "motor_composite.h"
 #include "planned_servo.h"
@@ -16,8 +15,6 @@
 #define IN2 3
 #define IN3 15
 #define IN4 13
-
-StepperConfig stepper_config{200};
 
 Motors motors{D0, D1};
 
