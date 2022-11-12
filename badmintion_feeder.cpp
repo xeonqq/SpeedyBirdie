@@ -23,15 +23,10 @@ PlannedServo ball_release_servo{D5, 0.5, 1000, 2000};
 
 EEPROMDecorator eeprom;
 
-const float servo_loop_interval = 0.02;        // sec
-const float servo_end_position_duration = 3.0; // sec;
+const float servo_loop_interval = 0.02; // sec
+float servo_loop_time = 0;              // sec
+float ball_release_to_push_delay = 0.5; // sec
 MicroQt::Timer servo_timer{static_cast<uint32_t>(servo_loop_interval * 1000)};
-MicroQt::Timer ball_release_timer{
-    static_cast<uint32_t>(servo_loop_interval * 1000)};
-
-const float stepper_loop_interval = 0.02; // sec
-MicroQt::Timer stepper_timer{
-    static_cast<uint32_t>(stepper_loop_interval * 1000)};
 
 void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   eeprom.Write<ShootingPower>(shoot_power);
@@ -57,14 +52,11 @@ void onApplyDevConfigRequest(uint16_t left_motor_offset,
       FeederServo::GetNetualPositionPercentage());
 };
 
-void onStartFeeding() {
-  servo_timer.start();
-  ball_release_timer.start();
-}
+void onStartFeeding() { servo_timer.start(); }
 
 void onStopFeeding() {
   servo_timer.stop();
-  ball_release_timer.stop();
+  servo_loop_time = 0;
   ball_release_servo.InitSmoothen();
   planned_servo.InitSmoothen();
 }
@@ -186,16 +178,11 @@ void SetupSoftAP() {
   ConfigureServer(server);
 }
 
-auto servo_loop = [&planned_servo, &servo_loop_interval]() {
-  static float t = 0;
-  planned_servo.Plan(t);
-  t += servo_loop_interval;
-};
-
-auto ball_release_loop = [&ball_release_servo, &servo_loop_interval]() {
-  static float t = 0;
-  ball_release_servo.Plan(t);
-  t += servo_loop_interval;
+auto servo_loop = [&servo_loop_time, &planned_servo, &ball_release_servo,
+                   &servo_loop_interval, &ball_release_to_push_delay]() {
+  ball_release_servo.Plan(servo_loop_time);
+  planned_servo.Plan(servo_loop_time - ball_release_to_push_delay);
+  servo_loop_time += servo_loop_interval;
 };
 
 MicroQt::Timer timer_next_event;
@@ -216,7 +203,6 @@ void setup() {
   servo_end_position = constrain(servo_end_position, 0, 1);
 
   planned_servo.Init(shooting_interval_sec, 0, servo_end_position);
-  servo_timer.sglTimeout.connect(servo_loop);
 
   float ball_release_servo_start_position =
       eeprom.Read<BallReleaseServoStartPosition>();
@@ -225,7 +211,8 @@ void setup() {
   ball_release_servo.Init(shooting_interval_sec,
                           ball_release_servo_start_position,
                           FeederServo::GetNetualPositionPercentage());
-  ball_release_timer.sglTimeout.connect(ball_release_loop);
+
+  servo_timer.sglTimeout.connect(servo_loop);
 
   /*  timer_next_event.sglTimeout.connect(*/
   /*[&servo_timer]() { servo_timer.start(); });*/

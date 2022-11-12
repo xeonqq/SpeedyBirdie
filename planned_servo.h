@@ -9,6 +9,9 @@ public:
       : FeederServo{pin, us_min, us_max}, push_time_{push_time} {}
 
   void Plan(float now) {
+    if (now < 0) {
+      return;
+    }
     now = std::fmod(now, GetIntervalDurationSec());
     float new_position;
     const auto pushing_time = GetPushingTime();
