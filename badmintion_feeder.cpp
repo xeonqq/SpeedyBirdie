@@ -10,16 +10,17 @@
 #include "eeprom_decorator.h"
 #include "motor_composite.h"
 #include "planned_servo.h"
+#include "servo.h"
 
-Motors motors{D0, D1};
+Motors motors{D0, D1, 1000, 2000};
 
 AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
 const char *password = "chinasprung";
 IPAddress apIP(192, 168, 0, 1);
 
-PlannedServo planned_servo{D6, 0.5, 1000, 2000};
-PlannedServo ball_release_servo{D5, 0.5, 1000, 2000};
+PlannedServo<FeederServo> planned_servo{0.5, D6, 1000, 2000};
+PlannedServo<FeederServo> ball_release_servo{0.5, D5, 1000, 2000};
 
 EEPROMDecorator eeprom;
 
@@ -56,7 +57,7 @@ void onApplyDevConfigRequest(uint16_t left_motor_offset,
 
 void onStartFeeding() {
   auto shoot_power = eeprom.Read<ShootingPower>();
-  motors.RunSpeed(shoot_power);
+  motors.Write(shoot_power);
   servo_timer.start();
 }
 
@@ -139,14 +140,14 @@ void ConfigureServer(AsyncWebServer &server) {
   server.on("/left_pwm", HTTP_POST, [](AsyncWebServerRequest *request) {
     String left_pwm = request->arg("left_pwm"); // 0-1000
     MicroQt::eventLoop.enqueueEvent(
-        [&motors, left_pwm]() { motors.RunSpeedRaw(0, left_pwm.toInt()); });
+        [&motors, left_pwm]() { motors.WriteRaw(0, left_pwm.toInt()); });
     request->send(200);
   });
 
   server.on("/right_pwm", HTTP_POST, [](AsyncWebServerRequest *request) {
     String right_pwm = request->arg("right_pwm"); // 0-1000
     MicroQt::eventLoop.enqueueEvent(
-        [&motors, right_pwm]() { motors.RunSpeedRaw(1, right_pwm.toInt()); });
+        [&motors, right_pwm]() { motors.WriteRaw(1, right_pwm.toInt()); });
     request->send(200);
   });
 

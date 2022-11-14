@@ -1,12 +1,11 @@
 #include "planner_adapter.h"
-#include "servo.h"
 #include <MicroQt.h>
 
-class PlannedServo : public FeederServo {
+template <typename ServoStrategy> class PlannedServo : public ServoStrategy {
 public:
-  PlannedServo(uint16_t pin, float push_time, int us_min = 1000,
-               int us_max = 2000)
-      : FeederServo{pin, us_min, us_max}, push_time_{push_time} {}
+  template <typename... Args>
+  PlannedServo(float push_time, Args... args)
+      : ServoStrategy{args...}, push_time_{push_time} {}
 
   void Plan(float now) {
     if (now < 0) {
@@ -25,7 +24,7 @@ public:
     }
     // Serial.println(new_position);
 
-    FeederServo::Write(new_position);
+    ServoStrategy::Write(new_position);
   }
 
   void InitByStartAndEnd(float start_value, float end_value) {
@@ -61,7 +60,7 @@ public:
 private:
   void WaitForSmoothen() {
     MicroQt::Synchronizer synchronizer;
-    float start = FeederServo::ReadPercentage();
+    float start = ServoStrategy::Read();
     float end = planner_pusher_.GetStart();
     float duration = 2.F;
     PlannerAdapter planner_smoothen;
@@ -70,7 +69,7 @@ private:
     float dt = 0.02;
     MicroQt::Timer timer;
     auto conn = timer.sglTimeout.connect([&]() {
-      FeederServo::Write(planner_smoothen.Plan(t));
+      ServoStrategy::Write(planner_smoothen.Plan(t));
       t += dt;
       if (t > planner_smoothen.GetDuration()) {
         synchronizer.exit(1);

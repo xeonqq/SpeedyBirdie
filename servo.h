@@ -25,7 +25,7 @@ public:
     servo.writeMicroseconds(ConstrainPWM(us));
   }
 
-  float ReadPercentage() {
+  float Read() {
     return math::map(static_cast<float>(servo.readMicroseconds()),
                      static_cast<float>(us_min_), static_cast<float>(us_max_),
                      0.F, 1.F);
