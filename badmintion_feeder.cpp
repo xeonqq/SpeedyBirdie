@@ -198,7 +198,7 @@ void setup() {
   eeprom.Init();
   SetupSoftAP();
 
-  motors.Init();
+  MicroQt::eventLoop.enqueueEvent([&motors]() { motors.Init(); });
   const auto left_motor_offset = eeprom.Read<LeftMotorOffset>();
   const auto right_motor_offset = eeprom.Read<RightMotorOffset>();
   motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
