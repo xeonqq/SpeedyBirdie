@@ -22,14 +22,11 @@ public:
   void WriteMicroseconds(uint16_t us) {
     // Serial.print("servo write:");
     // Serial.println(us);
-    last_us_ = ConstrainPWM(us);
-    servo.writeMicroseconds(last_us_);
+    servo.writeMicroseconds(ConstrainPWM(us));
   }
 
-  int ReadMicroseconds() const { return last_us_; }
-
-  float ReadPercentage() const {
-    return math::map(static_cast<float>(ReadMicroseconds()),
+  float ReadPercentage() {
+    return math::map(static_cast<float>(servo.readMicroseconds()),
                      static_cast<float>(us_min_), static_cast<float>(us_max_),
                      0.F, 1.F);
   }
@@ -39,5 +36,4 @@ private:
   int us_min_;
   int us_max_;
   Servo servo;
-  int last_us_{1500};
 };
