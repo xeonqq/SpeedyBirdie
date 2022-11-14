@@ -12,15 +12,14 @@
 #include "planned_servo.h"
 #include "servo.h"
 
-Motors motors{D0, D1, 1000, 2000};
-
 AsyncWebServer server(80);
 const char *ssid = "BirdyFeeder";
 const char *password = "chinasprung";
 IPAddress apIP(192, 168, 0, 1);
 
-PlannedServo<FeederServo> planned_servo{0.5, D6, 1000, 2000};
+PlannedServo<FeederServo> pushing_servo{0.5, D6, 1000, 2000};
 PlannedServo<FeederServo> ball_release_servo{0.5, D5, 1000, 2000};
+PlannedServo<Motors> motors{0.5, D0, D1, 1000, 2000};
 
 EEPROMDecorator eeprom;
 
@@ -32,8 +31,10 @@ MicroQt::Timer servo_timer{static_cast<uint32_t>(servo_loop_interval * 1000)};
 void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   eeprom.Write<ShootingPower>(shoot_power);
   eeprom.Write<ShootingIntervalSec>(shooting_interval_sec);
-  planned_servo.InitByDuration(shooting_interval_sec);
+  pushing_servo.InitByDuration(shooting_interval_sec);
   ball_release_servo.InitByDuration(shooting_interval_sec);
+  motors.InitByDuration(shooting_interval_sec);
+  motors.InitByStartAndEnd(0, shoot_power);
 };
 
 void onApplyDevConfigRequest(uint16_t left_motor_offset,
@@ -48,25 +49,21 @@ void onApplyDevConfigRequest(uint16_t left_motor_offset,
       ball_release_servo_start_position);
   eeprom.Write<BallReleaseToPushTimeDelay>(ball_release_to_push_time_delay);
   motors.SetPwmOffsets({left_motor_offset, right_motor_offset});
-  planned_servo.InitByStartAndEnd(0, servo_end_position);
+  pushing_servo.InitByStartAndEnd(0, servo_end_position);
   ball_release_servo.InitByStartAndEnd(
       ball_release_servo_start_position,
       FeederServo::GetNetualPositionPercentage());
   ball_release_to_push_delay = ball_release_to_push_time_delay;
 };
 
-void onStartFeeding() {
-  auto shoot_power = eeprom.Read<ShootingPower>();
-  motors.Write(shoot_power);
-  servo_timer.start();
-}
+void onStartFeeding() { servo_timer.start(); }
 
 void onStopFeeding() {
   motors.Stop();
   servo_timer.stop();
   servo_loop_time = 0;
   ball_release_servo.InitSmoothen();
-  planned_servo.InitSmoothen();
+  pushing_servo.InitSmoothen();
 }
 
 void handleNotFound(AsyncWebServerRequest *request) {
@@ -189,10 +186,21 @@ void SetupSoftAP() {
   ConfigureServer(server);
 }
 
-auto servo_loop = [&servo_loop_time, &planned_servo, &ball_release_servo,
-                   &servo_loop_interval, &ball_release_to_push_delay]() {
-  ball_release_servo.Plan(servo_loop_time);
-  planned_servo.Plan(servo_loop_time - ball_release_to_push_delay);
+auto servo_loop = [&servo_loop_time, &pushing_servo, &ball_release_servo,
+                   &motors, &servo_loop_interval,
+                   &ball_release_to_push_delay]() {
+  MicroQt::eventLoop.enqueueEvent([&ball_release_servo, servo_loop_time]() {
+    ball_release_servo.Plan(servo_loop_time);
+  });
+
+  const auto pushing_t = servo_loop_time - ball_release_to_push_delay;
+  MicroQt::eventLoop.enqueueEvent(
+      [&pushing_servo, pushing_t]() { pushing_servo.Plan(pushing_t); });
+
+  const auto motor_t = pushing_t - 0.5;
+  MicroQt::eventLoop.enqueueEvent(
+      [&motors, motor_t]() { motors.Plan(motor_t); });
+
   servo_loop_time += servo_loop_interval;
 };
 
@@ -213,8 +221,9 @@ void setup() {
   shooting_interval_sec = constrain(shooting_interval_sec, 1, 10);
   servo_end_position = constrain(servo_end_position, 0, 1);
 
-  planned_servo.Init(shooting_interval_sec, 0, servo_end_position);
+  pushing_servo.Init(shooting_interval_sec, 0, servo_end_position);
 
+  ball_release_to_push_delay = eeprom.Read<BallReleaseToPushTimeDelay>();
   float ball_release_servo_start_position =
       eeprom.Read<BallReleaseServoStartPosition>();
   ball_release_servo_start_position =
@@ -223,7 +232,9 @@ void setup() {
                           ball_release_servo_start_position,
                           FeederServo::GetNetualPositionPercentage());
 
-  ball_release_to_push_delay = eeprom.Read<BallReleaseToPushTimeDelay>();
+  uint16_t shooting_power = eeprom.Read<ShootingPower>();
+  shooting_power = constrain(shooting_power, 0, 200);
+  motors.Init(shooting_interval_sec, 0, shooting_power, false);
 
   servo_timer.sglTimeout.connect(servo_loop);
 

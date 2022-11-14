@@ -4,6 +4,8 @@ public:
   Motors(uint8_t left_motor_pin, uint8_t right_motor_pin, uint16_t us_min,
          uint16_t us_max)
       : min_microseconds_{us_min}, max_microseconds_{us_max} {
+    // initialize stored last value, before attach
+    ForEach([us_min](auto &motor) { motor.writeMicroseconds(us_min); });
     motors_[0].attach(left_motor_pin, min_microseconds_, max_microseconds_);
     motors_[1].attach(right_motor_pin, min_microseconds_, max_microseconds_);
   }

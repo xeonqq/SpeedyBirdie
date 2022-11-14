@@ -37,13 +37,16 @@ public:
     Init(duration_sec, planner_pusher_.GetStart(), planner_pusher_.GetEnd());
   }
 
-  void Init(float interval_duration_sec, float start_value, float end_value) {
+  void Init(float interval_duration_sec, float start_value, float end_value,
+            bool smoothen = true) {
     push_time_ = std::min(interval_duration_sec / 2, push_time_);
     interval_duration_sec_ = interval_duration_sec;
 
     planner_pusher_.Init(GetPushingTime(), start_value, end_value);
     planner_retreat_.Init(GetRetreatTime(), end_value, start_value);
-    InitSmoothen();
+    if (smoothen) {
+      InitSmoothen();
+    }
   }
 
   void InitSmoothen() {
