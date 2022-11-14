@@ -33,7 +33,6 @@ void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   eeprom.Write<ShootingIntervalSec>(shooting_interval_sec);
   planned_servo.InitByDuration(shooting_interval_sec);
   ball_release_servo.InitByDuration(shooting_interval_sec);
-  motors.RunSpeed(shoot_power);
 };
 
 void onApplyDevConfigRequest(uint16_t left_motor_offset,
@@ -55,9 +54,14 @@ void onApplyDevConfigRequest(uint16_t left_motor_offset,
   ball_release_to_push_delay = ball_release_to_push_time_delay;
 };
 
-void onStartFeeding() { servo_timer.start(); }
+void onStartFeeding() {
+  auto shoot_power = eeprom.Read<ShootingPower>();
+  motors.RunSpeed(shoot_power);
+  servo_timer.start();
+}
 
 void onStopFeeding() {
+  motors.Stop();
   servo_timer.stop();
   servo_loop_time = 0;
   ball_release_servo.InitSmoothen();
@@ -198,7 +202,7 @@ void setup() {
   eeprom.Init();
   SetupSoftAP();
 
-  MicroQt::eventLoop.enqueueEvent([&motors]() { motors.Init(); });
+  MicroQt::eventLoop.enqueueEvent([&motors]() { motors.Stop(); });
   const auto left_motor_offset = eeprom.Read<LeftMotorOffset>();
   const auto right_motor_offset = eeprom.Read<RightMotorOffset>();
   motors.SetPwmOffsets({left_motor_offset, right_motor_offset});

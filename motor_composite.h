@@ -6,7 +6,7 @@ public:
     motors_[1].attach(right_motor_pin, min_microseconds_, max_microseconds_);
   }
 
-  void Init() {
+  void Stop() {
     ForEach(
         [this](auto &motor) { motor.writeMicroseconds(min_microseconds_); });
   }
@@ -31,7 +31,7 @@ public:
 
 private:
   int ConstrainPWM(int value) {
-    return constrain(value, min_microseconds_, max_microseconds_);
+    return constrain(value, min_microseconds_, 1300);
   }
 
   template <typename Func> void ForEachI(Func &&func) {
