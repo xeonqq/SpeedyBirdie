@@ -5,17 +5,24 @@
 class FeederServo {
 public:
   FeederServo(int pin, int us_min = 1000, int us_max = 2000)
-      : us_min_{us_min}, us_max_{us_max} {
+      : us_min_{us_min}, us_max_{us_max}, pin_{pin} {
     servo.attach(pin, us_min_, us_max_);
   }
 
   void Reset() { WriteMicroseconds(us_min_); }
 
   void Write(float percentage) {
+
     const auto us_input = math::map(percentage, 0.0F, 1.F, us_min_, us_max_);
     // Serial.print("servo write:");
     // Serial.println(us_input);
+
+    unsigned long currentTime = micros();
     WriteMicroseconds(us_input);
+
+    Serial.print(F("WriteMicroseconds"));
+    Serial.print((micros() - currentTime) / 1000.0);
+    Serial.println(F(" ms"));
   }
   static float GetNetualPositionPercentage() { return 0.5; }
 
@@ -35,5 +42,6 @@ private:
   int ConstrainPWM(int value) { return constrain(value, us_min_, us_max_); }
   int us_min_;
   int us_max_;
+  int pin_;
   Servo servo;
 };

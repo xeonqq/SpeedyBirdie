@@ -7,6 +7,7 @@
 
 #include "EventLoop.h"
 #include "Server.h"
+#include "core_esp8266_features.h"
 #include "eeprom_decorator.h"
 #include "motor_composite.h"
 #include "planned_servo.h"
@@ -23,10 +24,11 @@ PlannedServo<Motors> motors{0.5, D0, D1, 1000, 2000};
 
 EEPROMDecorator eeprom;
 
-const float servo_loop_interval = 0.02; // sec
+const float main_loop_interval = 0.02;  // sec
 float servo_loop_time = 0;              // sec
 float ball_release_to_push_delay = 0.5; // sec
-MicroQt::Timer servo_timer{static_cast<uint32_t>(servo_loop_interval * 1000)};
+MicroQt::Timer main_loop_timer{
+    static_cast<uint32_t>(main_loop_interval * 1000)};
 
 void onApplyConfigRequest(uint16_t shoot_power, float shooting_interval_sec) {
   eeprom.Write<ShootingPower>(shoot_power);
@@ -56,11 +58,11 @@ void onApplyDevConfigRequest(uint16_t left_motor_offset,
   ball_release_to_push_delay = ball_release_to_push_time_delay;
 };
 
-void onStartFeeding() { servo_timer.start(); }
+void onStartFeeding() { main_loop_timer.start(); }
 
 void onStopFeeding() {
   motors.Stop();
-  servo_timer.stop();
+  main_loop_timer.stop();
   servo_loop_time = 0;
   ball_release_servo.InitSmoothen();
   pushing_servo.InitSmoothen();
@@ -187,27 +189,27 @@ void SetupSoftAP() {
 }
 
 auto servo_loop = [&servo_loop_time, &pushing_servo, &ball_release_servo,
-                   &motors, &servo_loop_interval,
+                   &motors, &main_loop_interval,
                    &ball_release_to_push_delay]() {
-  MicroQt::eventLoop.enqueueEvent([&ball_release_servo, servo_loop_time]() {
-    ball_release_servo.Plan(servo_loop_time);
-  });
+  // MicroQt::eventLoop.enqueueEvent([&ball_release_servo, servo_loop_time]() {
+  // ball_release_servo.Plan(servo_loop_time);
+  //});
 
-  const auto pushing_t = servo_loop_time - ball_release_to_push_delay;
-  MicroQt::eventLoop.enqueueEvent(
-      [&pushing_servo, pushing_t]() { pushing_servo.Plan(pushing_t); });
+  /*const auto pushing_t = servo_loop_time - ball_release_to_push_delay;*/
+  /*MicroQt::eventLoop.enqueueEvent(*/
+  /*[&pushing_servo, pushing_t]() { pushing_servo.Plan(pushing_t); });*/
 
-  const auto motor_t = pushing_t - 0.5;
-  MicroQt::eventLoop.enqueueEvent(
-      [&motors, motor_t]() { motors.Plan(motor_t); });
+  // const auto motor_t = pushing_t - 0.5;
+  // MicroQt::eventLoop.enqueueEvent(
+  //[&motors, motor_t]() { motors.Plan(motor_t); });
 
-  servo_loop_time += servo_loop_interval;
+  servo_loop_time += main_loop_interval;
 };
 
 MicroQt::Timer timer_next_event;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   eeprom.Init();
   SetupSoftAP();
 
@@ -236,10 +238,10 @@ void setup() {
   shooting_power = constrain(shooting_power, 0, 200);
   motors.Init(shooting_interval_sec, 0, shooting_power, false);
 
-  servo_timer.sglTimeout.connect(servo_loop);
+  main_loop_timer.sglTimeout.connect(servo_loop);
 
   /*  timer_next_event.sglTimeout.connect(*/
-  /*[&servo_timer]() { servo_timer.start(); });*/
+  /*[&main_loop_timer]() { main_loop_timer.start(); });*/
   /*timer_next_event.setSingleShot(true);*/
   /*timer_next_event.start(ball_release_servo.GetPushingTime());*/
 }
