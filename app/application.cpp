@@ -1,4 +1,6 @@
 #include <SmingCore.h>
+#include <AppSettings.h>
+#include <JsonObjectStream.h>
 
 // If you want, you can define WiFi settings globally in Eclipse Environment Variables
 HttpServer server;
@@ -8,6 +10,7 @@ void onIndex(HttpRequest& request, HttpResponse& response)
 	auto tmpl = new TemplateFileStream(F("index.html"));
 	response.sendNamedStream(tmpl); // this template object will be deleted automatically
 }
+
 void onFile(HttpRequest& request, HttpResponse& response)
 {
 	String file = request.uri.getRelativePath();
@@ -19,11 +22,19 @@ void onFile(HttpRequest& request, HttpResponse& response)
 		response.sendFile(file);
 	}
 }
+void onApplyDevConfig(HttpRequest& request, HttpResponse& response)
+{
+	//JsonObjectStream* stream = new JsonObjectStream();
+	//stream->getRoot() = AppSettings.AsJsonObject();
+	//response.setAllowCrossDomainOrigin("*");
+	//response.sendDataStream(stream, MIME_JSON);
+}
 
 void startWebServer()
 {
 	server.listen(80);
 	server.paths.set("/", onIndex);
+	server.paths.set("/apply_dev_config", onApplyDevConfig);
 	server.paths.setDefault(onFile);
 
 	Serial.println(_F("\r\n"
@@ -44,6 +55,10 @@ void init()
 
 	// Optional: Change IP addresses (and disable DHCP)
 	WifiAccessPoint.setIP(IpAddress(192, 168, 0, 1));
+
+	if(!AppSettings.exist()) {
+		AppSettings.save();
+	}
 
 	startWebServer();
 

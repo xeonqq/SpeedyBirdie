@@ -123,7 +123,7 @@ display: none;
                                                         });
                                         });
 
-                            $.getJSON("eeprom.json", (json)=> {
+                            $.getJSON("settings.json", (json)=> {
                                             console.log(json);
                                             $("#left_motor_power_offset").val(json.left_motor_offset);
                                             $("#right_motor_power_offset").val(json.right_motor_offset);
