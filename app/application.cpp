@@ -15,19 +15,31 @@ void onFile(HttpRequest& request, HttpResponse& response)
 {
 	String file = request.uri.getRelativePath();
 
-	if(file[0] == '.') {
-		response.code = HTTP_STATUS_FORBIDDEN;
-	} else {
-		response.setCache(86400, true); // It's important to use cache for better performance.
-		response.sendFile(file);
-	}
+	//response.setCache(86400, true); // problematic when sending modifiable json
+	response.sendFile(file);
 }
+
+/*void onSettings(HttpRequest& request, HttpResponse& response)*/
+/*{*/
+/*JsonObjectStream* stream = new JsonObjectStream();*/
+/*JsonObject json = stream->getRoot();*/
+/*AppSettings.ramObjectToJsonObject(json);*/
+/*response.sendDataStream(stream, MIME_JSON);*/
+/*}*/
+
 void onApplyDevConfig(HttpRequest& request, HttpResponse& response)
 {
-	//JsonObjectStream* stream = new JsonObjectStream();
-	//stream->getRoot() = AppSettings.AsJsonObject();
-	//response.setAllowCrossDomainOrigin("*");
-	//response.sendDataStream(stream, MIME_JSON);
+	if(request.method == HTTP_POST) {
+		AppSettings.get<LeftMotorOffset>() = request.getPostParameter("left_motor_offset").toInt();
+		AppSettings.get<RightMotorOffset>() = request.getPostParameter("right_motor_offset").toInt();
+		AppSettings.get<ServoEndPosition>() = request.getPostParameter("servo_final_position").toFloat();
+		AppSettings.get<BallReleaseServoStartPosition>() =
+			request.getPostParameter("ball_release_servo_final_position").toFloat();
+		AppSettings.get<BallReleaseToPushTimeDelay>() =
+			request.getPostParameter("ball_release_to_push_time_delay").toFloat();
+		AppSettings.save();
+		Serial.println(_F("save new config"));
+	}
 }
 
 void startWebServer()
@@ -35,6 +47,7 @@ void startWebServer()
 	server.listen(80);
 	server.paths.set("/", onIndex);
 	server.paths.set("/apply_dev_config", onApplyDevConfig);
+	//server.paths.set("/settings.json", onSettings);
 	server.paths.setDefault(onFile);
 
 	Serial.println(_F("\r\n"

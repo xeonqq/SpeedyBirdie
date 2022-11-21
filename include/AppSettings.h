@@ -17,6 +17,18 @@
 struct ApplicationSettingsStorage {
 	EEPROMData settings;
 
+	ApplicationSettingsStorage()
+	{
+		if(exist()) {
+			load();
+		}
+	}
+
+	void ramObjectToJsonObject(JsonObject& json)
+	{
+		for_each_in_tuple(settings, [&json](const auto& data) { json[data.name] = data.value; });
+	}
+
 	JsonObject AsJsonObject()
 	{
 		DynamicJsonDocument doc(std::tuple_size_v<EEPROMData> * 30);
@@ -24,6 +36,11 @@ struct ApplicationSettingsStorage {
 			return doc.as<JsonObject>();
 		}
 		return JsonObject{};
+	}
+
+	template <typename T> T& get()
+	{
+		return std::get<T>(settings);
 	}
 
 	void load()
@@ -40,7 +57,10 @@ struct ApplicationSettingsStorage {
 
 		for_each_in_tuple(settings, [&doc](const auto& data) { doc[data.name] = data.value; });
 
-		Json::saveToFile(doc, APP_SETTINGS_FILE);
+		bool success = Json::saveToFile(doc, APP_SETTINGS_FILE);
+
+		Serial << "save to file:" << success;
+		Serial.println();
 	}
 
 	bool exist()
