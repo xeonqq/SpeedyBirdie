@@ -14,18 +14,11 @@ void onIndex(HttpRequest& request, HttpResponse& response)
 void onFile(HttpRequest& request, HttpResponse& response)
 {
 	String file = request.uri.getRelativePath();
-
-	//response.setCache(86400, true); // problematic when sending modifiable json
+	if(file != APP_SETTINGS_FILE) {
+		response.setCache(86400, true); // problematic when sending modifiable json
+	}
 	response.sendFile(file);
 }
-
-/*void onSettings(HttpRequest& request, HttpResponse& response)*/
-/*{*/
-/*JsonObjectStream* stream = new JsonObjectStream();*/
-/*JsonObject json = stream->getRoot();*/
-/*AppSettings.ramObjectToJsonObject(json);*/
-/*response.sendDataStream(stream, MIME_JSON);*/
-/*}*/
 
 void onApplyDevConfig(HttpRequest& request, HttpResponse& response)
 {
