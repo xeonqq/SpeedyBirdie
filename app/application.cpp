@@ -31,6 +31,16 @@ void onApplyDevConfig(HttpRequest& request, HttpResponse& response)
 		AppSettings.get<BallReleaseToPushTimeDelay>() =
 			request.getPostParameter("ball_release_to_push_time_delay").toFloat();
 		AppSettings.save();
+		Serial.println(_F("save new dev config"));
+	}
+}
+
+void onApplyConfig(HttpRequest& request, HttpResponse& response)
+{
+	if(request.method == HTTP_POST) {
+		AppSettings.get<ShootingPower>() = request.getPostParameter("power").toInt();
+		AppSettings.get<ShootingIntervalSec>() = request.getPostParameter("interval").toFloat();
+		AppSettings.save();
 		Serial.println(_F("save new config"));
 	}
 }
@@ -40,7 +50,7 @@ void startWebServer()
 	server.listen(80);
 	server.paths.set("/", onIndex);
 	server.paths.set("/apply_dev_config", onApplyDevConfig);
-	//server.paths.set("/settings.json", onSettings);
+	server.paths.set("/apply_config", onApplyConfig);
 	server.paths.setDefault(onFile);
 
 	Serial.println(_F("\r\n"

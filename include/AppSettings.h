@@ -58,9 +58,6 @@ struct ApplicationSettingsStorage {
 		for_each_in_tuple(settings, [&doc](const auto& data) { doc[data.name] = data.value; });
 
 		bool success = Json::saveToFile(doc, APP_SETTINGS_FILE);
-
-		Serial << "save to file:" << success;
-		Serial.println();
 	}
 
 	bool exist()

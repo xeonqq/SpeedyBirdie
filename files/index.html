@@ -71,7 +71,7 @@ input[type="range"] {
                                                         });
                                         });
 
-                            $.getJSON("eeprom.json", (json)=> {
+                            $.getJSON("settings.json", (json)=> {
                                             console.log(json);
                                             $("#power_range").val(json.shooting_power);
                                             $("#shooting_interval_range").val(json.shooting_interval_sec);
