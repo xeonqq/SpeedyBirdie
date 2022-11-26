@@ -3,7 +3,6 @@
 
 #include "math.h"
 #include <Libraries/Servo/ServoChannel.h>
-#include <Libraries/Servo/Servo.h>
 
 class FeederServo
 {
@@ -29,9 +28,9 @@ public:
 		unsigned long currentTime = micros();
 		WriteMicroseconds(us_input);
 
-		Serial.print(F("WriteMicroseconds"));
-		Serial.print((micros() - currentTime) / 1000.0);
-		Serial.println(F(" ms"));
+		//Serial.print(F("WriteMicroseconds"));
+		//Serial.print((micros() - currentTime) / 1000.0);
+		//Serial.println(F(" ms"));
 	}
 	static float GetNetualPositionPercentage()
 	{

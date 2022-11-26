@@ -1,6 +1,7 @@
 #ifndef INCLUDE_PS_H_
 #define INCLUDE_PS_H_
 #include "planner_adapter.h"
+#include <SmingCore.h>
 
 template <typename ServoStrategy> class PlannedServo : public ServoStrategy
 {
@@ -55,11 +56,6 @@ public:
 		}
 	}
 
-	void InitSmoothen()
-	{
-		//MicroQt::eventLoop.enqueueEvent([this]() { WaitForSmoothen(); });
-	}
-
 	float GetIntervalDurationSec() const
 	{
 		return interval_duration_sec_;
@@ -79,33 +75,34 @@ public:
 		return interval_duration_sec_ - 2 * push_time_;
 	}
 
-private:
-	void WaitForSmoothen()
+	void InitSmoothen()
 	{
-		/*MicroQt::Synchronizer synchronizer;*/
-		/*float start = ServoStrategy::Read();*/
-		/*float end = planner_pusher_.GetStart();*/
-		/*float duration = 2.F;*/
-		/*PlannerAdapter planner_smoothen;*/
-		/*planner_smoothen.Init(duration, start, end);*/
-		/*float t = 0;*/
-		/*float dt = 0.02;*/
-		/*MicroQt::Timer timer;*/
-		/*auto conn = timer.sglTimeout.connect([&]() {*/
-		/*ServoStrategy::Write(planner_smoothen.Plan(t));*/
-		/*t += dt;*/
-		/*if(t > planner_smoothen.GetDuration()) {*/
-		/*synchronizer.exit(1);*/
-		/*}*/
-		/*});*/
-		/*timer.start(dt * 1000);*/
-		/*synchronizer.exec();*/
-		/*timer.sglTimeout.disconnect(conn);*/
+		float start = ServoStrategy::Read();
+		float end = planner_pusher_.GetStart();
+		float duration = 2.F;
+		planner_smoothen_.Init(duration, start, end);
+		smoothen_t_ = 0.F;
+		smoothen_timer_
+			.initializeMs(static_cast<int>(smoothen_dt_ * 1000),
+						  [&]() {
+							  ServoStrategy::Write(planner_smoothen_.Plan(smoothen_t_));
+							  smoothen_t_ += smoothen_dt_;
+							  if(smoothen_t_ > planner_smoothen_.GetDuration()) {
+								  smoothen_timer_.stop();
+							  }
+						  })
+			.start();
 	}
 
+private:
 	PlannerAdapter planner_pusher_{};
 	PlannerAdapter planner_retreat_{};
 	float interval_duration_sec_{};
 	float push_time_{};
+
+	float smoothen_t_ = 0;
+	float smoothen_dt_ = 0.02;
+	PlannerAdapter planner_smoothen_;
+	Timer smoothen_timer_;
 };
 #endif

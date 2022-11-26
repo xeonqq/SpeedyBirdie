@@ -5,6 +5,7 @@
 #include <servo.h>
 #include <motor_composite.h>
 #include <esp8266_pins.h>
+#include <state.h>
 
 HttpServer server;
 PlannedServo<FeederServo> pushing_servo{0.5, D6, 1000, 2000};
@@ -83,20 +84,41 @@ void onServoPwm(HttpRequest& request, HttpResponse& response)
 
 void onStartFeeding(HttpRequest& request, HttpResponse& response)
 {
-	main_loop_timer.start();
+	g_state = State::Feeding;
 }
 
 void onStopFeeding(HttpRequest& request, HttpResponse& response)
 {
+	g_state = State::Stop;
+}
+
+void stopFeeding()
+{
 	motors.Stop();
-	main_loop_timer.stop();
 	servo_loop_time = 0;
-	ball_release_servo.InitSmoothen();
-	pushing_servo.InitSmoothen();
 }
 
 void main_loop()
 {
+	switch(g_state) {
+	case State::Stop:
+		stopFeeding();
+		g_state = State::Smoothing;
+		break;
+
+	case State::Smoothing:
+		ball_release_servo.InitSmoothen();
+		pushing_servo.InitSmoothen();
+		g_state = State::Ready;
+		break;
+
+	case State::Ready:
+		//do nothing
+		break;
+
+	case State::Feeding:
+		break;
+	}
 }
 
 void startWebServer()
