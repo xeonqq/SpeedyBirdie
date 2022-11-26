@@ -1,3 +1,5 @@
+#ifndef INCLUDE_TUPLE_HELPER_H_
+#define INCLUDE_TUPLE_HELPER_H_
 #include <tuple>
 #include <utility>
 template <class T, class Tuple> struct Index;
@@ -56,3 +58,4 @@ template <typename... Ts, typename F> void for_each_in_tuple(std::tuple<Ts...>& 
 {
 	detail::for_each(t, f, detail::gen_seq<sizeof...(Ts)>());
 }
+#endif
