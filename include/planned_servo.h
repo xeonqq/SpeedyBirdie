@@ -75,10 +75,17 @@ public:
 		return interval_duration_sec_ - 2 * push_time_;
 	}
 
+	bool IsReady() const
+	{
+		return !smoothen_timer_.isStarted();
+	}
 	void InitSmoothen()
 	{
 		float start = ServoStrategy::Read();
 		float end = planner_pusher_.GetStart();
+		if(start == end) {
+			return;
+		}
 		float duration = 2.F;
 		planner_smoothen_.Init(duration, start, end);
 		smoothen_t_ = 0.F;

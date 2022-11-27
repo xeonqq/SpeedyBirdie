@@ -1,2 +1,2 @@
 #include <state.h>
-State g_state{State::Stop};
+State g_state{State::Init};

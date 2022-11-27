@@ -18,6 +18,16 @@ const float main_loop_interval = 0.02;  // sec
 float servo_loop_time = 0;				// sec
 float ball_release_to_push_delay = 0.5; // sec
 
+bool AreActuatorsReady()
+{
+	return pushing_servo.IsReady() && ball_release_servo.IsReady() && motors.IsReady();
+}
+
+void TransitionTo(State state)
+{
+	g_state = state;
+}
+
 void onIndex(HttpRequest& request, HttpResponse& response)
 {
 	auto tmpl = new TemplateFileStream(F("index.html"));
@@ -45,6 +55,12 @@ void onApplyDevConfig(HttpRequest& request, HttpResponse& response)
 			request.getPostParameter("ball_release_to_push_time_delay").toFloat();
 		AppSettings.save();
 		Serial.println(_F("save new dev config"));
+
+		motors.SetPwmOffsets({AppSettings.get<LeftMotorOffset>(), AppSettings.get<RightMotorOffset>()});
+		pushing_servo.InitByStartAndEnd(0, AppSettings.get<ServoEndPosition>());
+		ball_release_servo.InitByStartAndEnd(AppSettings.get<BallReleaseServoStartPosition>(),
+											 FeederServo::GetNetualPositionPercentage());
+		ball_release_to_push_delay = AppSettings.get<BallReleaseToPushTimeDelay>();
 	}
 }
 
@@ -55,6 +71,11 @@ void onApplyConfig(HttpRequest& request, HttpResponse& response)
 		AppSettings.get<ShootingIntervalSec>() = request.getPostParameter("interval").toFloat();
 		AppSettings.save();
 		Serial.println(_F("save new config"));
+
+		float shooting_interval_sec = AppSettings.get<ShootingIntervalSec>();
+		pushing_servo.InitByDuration(shooting_interval_sec);
+		ball_release_servo.InitByDuration(shooting_interval_sec);
+		motors.Init(0, AppSettings.get<ShootingPower>(), shooting_interval_sec, false);
 	}
 }
 
@@ -98,18 +119,26 @@ void stopFeeding()
 	servo_loop_time = 0;
 }
 
+void loadConfig();
+
 void main_loop()
 {
 	switch(g_state) {
+	case State::Init:
+		stopFeeding();
+		loadConfig();
+		TransitionTo(State::Smoothing);
+		break;
 	case State::Stop:
 		stopFeeding();
-		g_state = State::Smoothing;
-		break;
-
-	case State::Smoothing:
 		ball_release_servo.InitSmoothen();
 		pushing_servo.InitSmoothen();
-		g_state = State::Ready;
+		TransitionTo(State::Smoothing);
+		break;
+	case State::Smoothing:
+		if(AreActuatorsReady()) {
+			TransitionTo(State::Ready);
+		}
 		break;
 
 	case State::Ready:
@@ -138,6 +167,27 @@ void startWebServer()
 	Serial.println(_F("\r\n"
 					  "=== WEB SERVER STARTED ==="));
 	Serial.println(_F("==========================\r\n"));
+}
+
+void loadConfig()
+{
+	AppSettings.load();
+	motors.SetPwmOffsets({AppSettings.get<LeftMotorOffset>(), AppSettings.get<RightMotorOffset>()});
+
+	float shooting_interval_sec = constrain(AppSettings.get<ShootingIntervalSec>().value, 1, 10);
+	float servo_end_position = constrain(AppSettings.get<ServoEndPosition>().value, 0, 1);
+
+	pushing_servo.Init(shooting_interval_sec, 0, servo_end_position);
+
+	ball_release_to_push_delay = AppSettings.get<BallReleaseToPushTimeDelay>();
+	float ball_release_servo_start_position = constrain(AppSettings.get<BallReleaseServoStartPosition>().value, 0, 1);
+	ball_release_servo.Init(shooting_interval_sec, ball_release_servo_start_position,
+							FeederServo::GetNetualPositionPercentage());
+	Serial << "ball_release_servo_start_position" << ball_release_servo_start_position;
+	Serial.println();
+
+	uint16_t shooting_power = constrain(AppSettings.get<ShootingPower>().value, 0, 200);
+	motors.Init(shooting_interval_sec, 0, shooting_power, false);
 }
 
 void init()

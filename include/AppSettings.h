@@ -17,13 +17,6 @@
 struct ApplicationSettingsStorage {
 	EEPROMData settings;
 
-	ApplicationSettingsStorage()
-	{
-		if(exist()) {
-			load();
-		}
-	}
-
 	void ramObjectToJsonObject(JsonObject& json)
 	{
 		for_each_in_tuple(settings, [&json](const auto& data) { json[data.name] = data.value; });
@@ -45,10 +38,18 @@ struct ApplicationSettingsStorage {
 
 	void load()
 	{
-		DynamicJsonDocument doc(std::tuple_size_v<EEPROMData> * 30);
+		DynamicJsonDocument doc(std::tuple_size_v<EEPROMData> * 50);
 		if(Json::loadFromFile(doc, APP_SETTINGS_FILE)) {
 			for_each_in_tuple(settings, [&doc](auto& data) { data.value = doc[data.name]; });
+			Serial << "loading...";
+		} else {
+			Serial << "loading from " << APP_SETTINGS_FILE << " failed\n";
 		}
+
+		Serial << "loaded setting: servo start position" << get<BallReleaseServoStartPosition>().value;
+		Serial.println();
+		Serial << "loaded setting: push servo end position" << get<ServoEndPosition>().value;
+		Serial.println();
 	}
 
 	void save()
@@ -66,6 +67,6 @@ struct ApplicationSettingsStorage {
 	}
 };
 
-static ApplicationSettingsStorage AppSettings;
+static ApplicationSettingsStorage AppSettings{};
 
 #endif /* INCLUDE_APPSETTINGS_H_ */
