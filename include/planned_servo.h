@@ -7,7 +7,8 @@ template <typename ServoStrategy> class PlannedServo : public ServoStrategy
 {
 public:
 	template <typename... Args>
-	PlannedServo(float push_time, Args... args) : ServoStrategy{args...}, push_time_{push_time}
+	PlannedServo(float push_time, float constant_end_value_duration, Args... args)
+		: ServoStrategy{args...}, push_time_{push_time}, constant_end_value_duration_{constant_end_value_duration}
 	{
 	}
 
@@ -30,6 +31,8 @@ public:
 		} else if(now < (idle_time + pushing_time)) {
 			new_position = planner_pusher_.Plan(now - idle_time);
 			//Serial << "pushing @" << now - idle_time;
+		} else if(now < (idle_time + pushing_time + constant_end_value_duration_)) {
+			new_position = planner_pusher_.GetEnd();
 		} else //if(now < GetIntervalDurationSec())
 		{
 			new_position = planner_retreat_.Plan(now - idle_time - pushing_time);
@@ -81,7 +84,7 @@ public:
 
 	float GetIdleTime() const
 	{
-		return interval_duration_sec_ - 2 * push_time_;
+		return interval_duration_sec_ - 2 * push_time_ - constant_end_value_duration_;
 	}
 
 	bool IsReady() const
@@ -115,6 +118,7 @@ private:
 	PlannerAdapter planner_retreat_{};
 	float interval_duration_sec_{};
 	float push_time_{};
+	float constant_end_value_duration_{};
 
 	float smoothen_t_ = 0;
 	float smoothen_dt_ = 0.02;

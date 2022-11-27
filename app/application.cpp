@@ -8,9 +8,9 @@
 #include <state.h>
 
 HttpServer server;
-PlannedServo<FeederServo> pushing_servo{0.5, D6, 1000, 2000};
-PlannedServo<FeederServo> ball_release_servo{0.5, D5, 1000, 2000};
-PlannedServo<Motors> motors{0.5, D0, D1, 1000, 2000};
+PlannedServo<FeederServo> pushing_servo{0.5, 0.5, D6, 1000, 2000};
+PlannedServo<FeederServo> ball_release_servo{0.5, 0.0, D5, 1000, 2000};
+PlannedServo<Motors> motors{0.5, 0.5, D0, D1, 1000, 2000};
 
 SimpleTimer main_loop_timer;
 
@@ -128,7 +128,7 @@ void feeding_loop()
 	const auto pushing_t = servo_loop_time - ball_release_to_push_delay;
 	pushing_servo.Plan(pushing_t);
 
-	const auto motor_t = pushing_t - 0.5;
+	const auto motor_t = pushing_t + 0.3;
 	motors.Plan(motor_t);
 
 	servo_loop_time += main_loop_interval;
