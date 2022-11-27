@@ -24,8 +24,12 @@ public:
 
 	void Write(int power)
 	{
+		//Serial << "power:" << power;
+		//Serial.println();
 		ForEachI([&](uint16_t i, auto& motor) {
 			const int speed_microseconds = map(power, 0, 1000, min_microseconds_ + offsets_[i], max_microseconds_);
+			//Serial << "motor:" << speed_microseconds;
+			//Serial.println();
 			motor.setValue(ConstrainPWM(speed_microseconds));
 		});
 	}

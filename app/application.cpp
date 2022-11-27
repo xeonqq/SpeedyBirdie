@@ -14,18 +14,21 @@ PlannedServo<Motors> motors{0.5, D0, D1, 1000, 2000};
 
 SimpleTimer main_loop_timer;
 
-const float main_loop_interval = 0.02;  // sec
-float servo_loop_time = 0;				// sec
-float ball_release_to_push_delay = 0.5; // sec
+constexpr float main_loop_interval = 0.02; // sec
+float servo_loop_time = 0;				   // sec
+float ball_release_to_push_delay = 0.5;	// sec
 
 bool AreActuatorsReady()
 {
-	return pushing_servo.IsReady() && ball_release_servo.IsReady() && motors.IsReady();
+	return pushing_servo.IsReady() && ball_release_servo.IsReady();
 }
 
 void TransitionTo(State state)
 {
 	g_state = state;
+	if(state == State::Feeding) {
+		servo_loop_time = 0;
+	}
 }
 
 void onIndex(HttpRequest& request, HttpResponse& response)
@@ -61,6 +64,7 @@ void onApplyDevConfig(HttpRequest& request, HttpResponse& response)
 		ball_release_servo.InitByStartAndEnd(AppSettings.get<BallReleaseServoStartPosition>(),
 											 FeederServo::GetNetualPositionPercentage());
 		ball_release_to_push_delay = AppSettings.get<BallReleaseToPushTimeDelay>();
+		TransitionTo(State::Stop);
 	}
 }
 
@@ -75,7 +79,9 @@ void onApplyConfig(HttpRequest& request, HttpResponse& response)
 		float shooting_interval_sec = AppSettings.get<ShootingIntervalSec>();
 		pushing_servo.InitByDuration(shooting_interval_sec);
 		ball_release_servo.InitByDuration(shooting_interval_sec);
-		motors.Init(0, AppSettings.get<ShootingPower>(), shooting_interval_sec, false);
+		motors.Init(shooting_interval_sec, 0, AppSettings.get<ShootingPower>(), false);
+
+		TransitionTo(State::Stop);
 	}
 }
 
@@ -105,32 +111,39 @@ void onServoPwm(HttpRequest& request, HttpResponse& response)
 
 void onStartFeeding(HttpRequest& request, HttpResponse& response)
 {
-	g_state = State::Feeding;
+	TransitionTo(State::Feeding);
 }
 
 void onStopFeeding(HttpRequest& request, HttpResponse& response)
 {
-	g_state = State::Stop;
-}
-
-void stopFeeding()
-{
-	motors.Stop();
-	servo_loop_time = 0;
+	TransitionTo(State::Stop);
 }
 
 void loadConfig();
+
+void feeding_loop()
+{
+	ball_release_servo.Plan(servo_loop_time);
+
+	const auto pushing_t = servo_loop_time - ball_release_to_push_delay;
+	pushing_servo.Plan(pushing_t);
+
+	const auto motor_t = pushing_t - 0.5;
+	motors.Plan(motor_t);
+
+	servo_loop_time += main_loop_interval;
+}
 
 void main_loop()
 {
 	switch(g_state) {
 	case State::Init:
-		stopFeeding();
+		motors.Stop();
 		loadConfig();
 		TransitionTo(State::Smoothing);
 		break;
 	case State::Stop:
-		stopFeeding();
+		motors.Stop();
 		ball_release_servo.InitSmoothen();
 		pushing_servo.InitSmoothen();
 		TransitionTo(State::Smoothing);
@@ -146,6 +159,7 @@ void main_loop()
 		break;
 
 	case State::Feeding:
+		feeding_loop();
 		break;
 	}
 }
@@ -183,8 +197,6 @@ void loadConfig()
 	float ball_release_servo_start_position = constrain(AppSettings.get<BallReleaseServoStartPosition>().value, 0, 1);
 	ball_release_servo.Init(shooting_interval_sec, ball_release_servo_start_position,
 							FeederServo::GetNetualPositionPercentage());
-	Serial << "ball_release_servo_start_position" << ball_release_servo_start_position;
-	Serial.println();
 
 	uint16_t shooting_power = constrain(AppSettings.get<ShootingPower>().value, 0, 200);
 	motors.Init(shooting_interval_sec, 0, shooting_power, false);

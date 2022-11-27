@@ -16,18 +16,27 @@ public:
 		if(now < 0) {
 			return;
 		}
+
+		//Serial << "now:" << now;
 		now = std::fmod(now, GetIntervalDurationSec());
-		float new_position;
+		//Serial << " interval:" << GetIntervalDurationSec() << " after fmod:" << now;
+		//Serial.println();
+		float new_position{};
 		const auto pushing_time = GetPushingTime();
 		const auto idle_time = GetIdleTime();
 		if(now < idle_time) {
 			new_position = planner_pusher_.Plan(0);
+			//Serial << "idle\n";
 		} else if(now < (idle_time + pushing_time)) {
 			new_position = planner_pusher_.Plan(now - idle_time);
-		} else if(now < GetIntervalDurationSec()) {
+			//Serial << "pushing @" << now - idle_time;
+		} else //if(now < GetIntervalDurationSec())
+		{
 			new_position = planner_retreat_.Plan(now - idle_time - pushing_time);
+			//Serial << "retreat @" << now - idle_time - pushing_time;
 		}
-		// Serial.println(new_position);
+		//Serial.println();
+		//Serial.println(new_position);
 
 		ServoStrategy::Write(new_position);
 	}
