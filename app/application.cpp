@@ -8,8 +8,8 @@
 #include <state.h>
 
 HttpServer server;
-PlannedServo<FeederServo> pushing_servo{0.5, 0.5, D6, 1000, 2000};
-PlannedServo<FeederServo> ball_release_servo{0.5, 0.0, D5, 1000, 2000};
+PlannedServo<FeederServo> ball_release_servo_1{0.5, 0.0, D5, 1000, 2000};
+PlannedServo<FeederServo> ball_release_servo_2{0.5, 0.0, D6, 1000, 2000};
 PlannedServo<Motors> motors{0.5, 0.5, D0, D1, 1000, 2000};
 
 SimpleTimer main_loop_timer;
@@ -20,7 +20,7 @@ float ball_release_to_push_delay = 0.5;	// sec
 
 bool AreActuatorsReady()
 {
-	return pushing_servo.IsReady() && ball_release_servo.IsReady();
+	return ball_release_servo_1.IsReady() && ball_release_servo_2.IsReady();
 }
 
 void TransitionTo(State state)
@@ -60,9 +60,10 @@ void onApplyDevConfig(HttpRequest& request, HttpResponse& response)
 		Serial.println(_F("save new dev config"));
 
 		motors.SetPwmOffsets({AppSettings.get<LeftMotorOffset>(), AppSettings.get<RightMotorOffset>()});
-		pushing_servo.InitByStartAndEnd(0, AppSettings.get<ServoEndPosition>());
-		ball_release_servo.InitByStartAndEnd(AppSettings.get<BallReleaseServoStartPosition>(),
-											 FeederServo::GetNetualPositionPercentage());
+		ball_release_servo_1.InitByStartAndEnd(AppSettings.get<ServoEndPosition>(),
+											   FeederServo::GetNetualPositionPercentage());
+		ball_release_servo_2.InitByStartAndEnd(AppSettings.get<BallReleaseServoStartPosition>(),
+											   FeederServo::GetNetualPositionPercentage());
 		ball_release_to_push_delay = AppSettings.get<BallReleaseToPushTimeDelay>();
 		TransitionTo(State::Stop);
 	}
@@ -77,8 +78,8 @@ void onApplyConfig(HttpRequest& request, HttpResponse& response)
 		Serial.println(_F("save new config"));
 
 		float shooting_interval_sec = AppSettings.get<ShootingIntervalSec>();
-		pushing_servo.InitByDuration(shooting_interval_sec);
-		ball_release_servo.InitByDuration(shooting_interval_sec);
+		ball_release_servo_1.InitByDuration(shooting_interval_sec);
+		ball_release_servo_2.InitByDuration(shooting_interval_sec);
 		motors.Init(shooting_interval_sec, 0, AppSettings.get<ShootingPower>(), false);
 
 		TransitionTo(State::Stop);
@@ -105,7 +106,7 @@ void onServoPwm(HttpRequest& request, HttpResponse& response)
 {
 	if(request.method == HTTP_POST) {
 		const auto servo_pwm = request.getPostParameter("servo_pwm").toFloat();
-		ball_release_servo.Write(servo_pwm);
+		ball_release_servo_2.Write(servo_pwm);
 	}
 }
 
@@ -123,10 +124,10 @@ void loadConfig();
 
 void feeding_loop()
 {
-	ball_release_servo.Plan(servo_loop_time);
+	ball_release_servo_1.Plan(servo_loop_time);
 
 	const auto pushing_t = servo_loop_time - ball_release_to_push_delay;
-	pushing_servo.Plan(pushing_t);
+	ball_release_servo_2.Plan(pushing_t);
 
 	const auto motor_t = pushing_t + 0.3;
 	motors.Plan(motor_t);
@@ -144,8 +145,8 @@ void main_loop()
 		break;
 	case State::Stop:
 		motors.Stop();
-		ball_release_servo.InitSmoothen();
-		pushing_servo.InitSmoothen();
+		ball_release_servo_2.InitSmoothen();
+		ball_release_servo_1.InitSmoothen();
 		TransitionTo(State::Smoothing);
 		break;
 	case State::Smoothing:
@@ -191,12 +192,12 @@ void loadConfig()
 	float shooting_interval_sec = constrain(AppSettings.get<ShootingIntervalSec>().value, 1, 10);
 	float servo_end_position = constrain(AppSettings.get<ServoEndPosition>().value, 0, 1);
 
-	pushing_servo.Init(shooting_interval_sec, 0, servo_end_position);
+	ball_release_servo_1.Init(shooting_interval_sec, servo_end_position, FeederServo::GetNetualPositionPercentage());
 
 	ball_release_to_push_delay = AppSettings.get<BallReleaseToPushTimeDelay>();
 	float ball_release_servo_start_position = constrain(AppSettings.get<BallReleaseServoStartPosition>().value, 0, 1);
-	ball_release_servo.Init(shooting_interval_sec, ball_release_servo_start_position,
-							FeederServo::GetNetualPositionPercentage());
+	ball_release_servo_2.Init(shooting_interval_sec, ball_release_servo_start_position,
+							  FeederServo::GetNetualPositionPercentage());
 
 	uint16_t shooting_power = constrain(AppSettings.get<ShootingPower>().value, 0, 200);
 	motors.Init(shooting_interval_sec, 0, shooting_power, false);
