@@ -25,18 +25,18 @@ public:
 		float new_position{};
 		const auto pushing_time = GetPushingTime();
 		const auto idle_time = GetIdleTime();
-		if(now < idle_time) {
+		if(now < (pushing_time)) {
+			new_position = planner_pusher_.Plan(now);
+			//Serial << "pushing @" << now - idle_time;
+		} else if(now < (pushing_time + constant_end_value_duration_)) {
+			new_position = planner_pusher_.GetEnd();
+		} else if(now < (pushing_time + constant_end_value_duration_ + GetRetreatTime())) {
+			new_position = planner_retreat_.Plan(now - pushing_time - constant_end_value_duration_);
+			//Serial << "retreat @" << now - idle_time - pushing_time;
+		} else //idle
+		{
 			new_position = planner_pusher_.Plan(0);
 			//Serial << "idle\n";
-		} else if(now < (idle_time + pushing_time)) {
-			new_position = planner_pusher_.Plan(now - idle_time);
-			//Serial << "pushing @" << now - idle_time;
-		} else if(now < (idle_time + pushing_time + constant_end_value_duration_)) {
-			new_position = planner_pusher_.GetEnd();
-		} else //if(now < GetIntervalDurationSec())
-		{
-			new_position = planner_retreat_.Plan(now - idle_time - pushing_time);
-			//Serial << "retreat @" << now - idle_time - pushing_time;
 		}
 		//Serial.println();
 		//Serial.println(new_position);
