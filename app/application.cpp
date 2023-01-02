@@ -10,7 +10,7 @@
 HttpServer server;
 PlannedServo<FeederServo> ball_release_servo_1{0.5, 0.0, D5, 1000, 2000};
 PlannedServo<FeederServo> ball_release_servo_2{0.5, 0.0, D6, 1000, 2000};
-PlannedServo<Motors> motors{0.5, 0.5, D0, D1, 1000, 2000};
+PlannedServo<Motors> motors{0.5, 1, D0, D1, 1000, 2000};
 
 SimpleTimer main_loop_timer;
 
@@ -126,10 +126,10 @@ void feeding_loop()
 {
 	ball_release_servo_1.Plan(servo_loop_time);
 
-	const auto pushing_t = servo_loop_time - ball_release_to_push_delay;
+	const auto pushing_t = servo_loop_time - 0.8;
 	ball_release_servo_2.Plan(pushing_t);
 
-	const auto motor_t = pushing_t + 0.3;
+	const auto motor_t = pushing_t - ball_release_to_push_delay;
 	motors.Plan(motor_t);
 
 	servo_loop_time += main_loop_interval;
