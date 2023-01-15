@@ -66,12 +66,38 @@ display: none;
                     <label id="ball_release_to_push_time_delay_text">0</label><br>
                     <input type="range" id="ball_release_to_push_time_delay" min="-2" max="2" value="0.0" step="0.01">
                 </div>
+
+                <div class="form-group", id="servos-config-group">
+                </div>
+
+                
  
                 <button type="button" class="btn btn-primary" id="apply_config">Apply</button>
             </div>
         </div>
         <script>
             $(document).ready(() => {
+                            var servos = ['gripper_start_position', 'gripper_end_position','lifter_start_position', 'lifter_end_position'];
+                            for (i in servos) { 
+                                            var label=$('<label>'+servos[i]+':</label>');
+                                            label.appendTo('#servos-config-group'); 
+
+                                            var servo_value=$('<label>0.5</label>');
+                                            servo_value.attr("id", servos[i]+'_value');
+                                            servo_value.appendTo('#servos-config-group'); 
+
+                                            var servo_config = $('<input type="range" min="0" max="1" value="0.5" step="0.01">');
+                                            servo_config.attr("id", servos[i]);
+
+                                            servo_config = $(servo_config).wrap('<div />').parent();
+                                            servo_config.appendTo('#servos-config-group'); 
+                                        }
+
+                            $.each( servos, function(i) {
+                                            $('#'+servos[i]).on("input", () => {
+                                                            $('#'+servos[i]+'_value').text($('#'+servos[i]).val());
+                                                        });
+                                        });
 
                             $("#left_motor_pwm").on("input", () => {
                                             $("#pwm_left").text($("#left_motor_pwm").val());
