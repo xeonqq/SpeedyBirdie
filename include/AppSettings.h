@@ -46,9 +46,9 @@ struct ApplicationSettingsStorage {
 			Serial << "loading from " << APP_SETTINGS_FILE << " failed\n";
 		}
 
-		Serial << "loaded setting: servo start position" << get<BallReleaseServoStartPosition>().value;
+		Serial << "loaded setting: servo start position" << get<LifterServoStartPosition>().value;
 		Serial.println();
-		Serial << "loaded setting: push servo end position" << get<ServoEndPosition>().value;
+		Serial << "loaded setting: push servo end position" << get<GripperServoEndPosition>().value;
 		Serial.println();
 	}
 

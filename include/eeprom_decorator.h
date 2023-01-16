@@ -39,14 +39,24 @@ struct RightMotorOffset : EEPROMBaseType<uint16_t> {
 	static constexpr char const* name = "right_motor_offset";
 };
 
-struct ServoEndPosition : EEPROMBaseType<float> {
+struct GripperServoStartPosition : EEPROMBaseType<float> {
 	using EEPROMBaseType<float>::EEPROMBaseType;
-	static constexpr char const* name = "servo_end_position";
+	static constexpr char const* name = "gripper_start_position";
 };
 
-struct BallReleaseServoStartPosition : EEPROMBaseType<float> {
+struct GripperServoEndPosition : EEPROMBaseType<float> {
 	using EEPROMBaseType<float>::EEPROMBaseType;
-	static constexpr char const* name = "ball_release_servo_start_position";
+	static constexpr char const* name = "gripper_end_position";
+};
+
+struct LifterServoStartPosition : EEPROMBaseType<float> {
+	using EEPROMBaseType<float>::EEPROMBaseType;
+	static constexpr char const* name = "lifter_start_position";
+};
+
+struct LifterServoEndPosition : EEPROMBaseType<float> {
+	using EEPROMBaseType<float>::EEPROMBaseType;
+	static constexpr char const* name = "lifter_end_position";
 };
 
 struct BallReleaseToPushTimeDelay : EEPROMBaseType<float> {
@@ -54,7 +64,8 @@ struct BallReleaseToPushTimeDelay : EEPROMBaseType<float> {
 	static constexpr char const* name = "ball_release_to_push_time_delay";
 };
 
-using EEPROMData = std::tuple<ShootingPower, ShootingIntervalSec, LeftMotorOffset, RightMotorOffset, ServoEndPosition,
-							  BallReleaseServoStartPosition, BallReleaseToPushTimeDelay>;
+using EEPROMData =
+	std::tuple<ShootingPower, ShootingIntervalSec, LeftMotorOffset, RightMotorOffset, GripperServoStartPosition,
+			   GripperServoEndPosition, LifterServoStartPosition, LifterServoEndPosition, BallReleaseToPushTimeDelay>;
 
 #endif
