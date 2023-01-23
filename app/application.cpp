@@ -8,16 +8,16 @@
 #include <state.h>
 
 HttpServer server;
-PlannedServo<FeederServo> gripper_servo{0.5, 0.0, D5, 1000, 2000};
-PlannedServo<FeederServo> lifter_servo{0.5, 0.0, D6, 1000, 2000};
+PlannedServo<FeederServo> gripper_servo{0.5, 0.5, D5, 1000, 2000};
+PlannedServo<FeederServo> lifter_servo{0.5, 0.5, D6, 1000, 2000};
 PlannedServo<Motors> motors{0.5, 1, D0, D1, 1000, 2000};
 
 SimpleTimer main_loop_timer;
 
-constexpr float main_loop_interval = 0.02;  // sec
-float servo_loop_time = 0;					// sec
-float ball_release_to_push_delay = 0.5;		// sec
-constexpr float ball_release_2_delay = 0.8; // sec
+constexpr float main_loop_interval = 0.02;				 // sec
+float servo_loop_time = 0;								 // sec
+float ball_release_to_push_delay = 0.5;					 // sec
+constexpr float start_grabbing_to_lift_down_delay = 0.5; // sec
 
 bool AreActuatorsReady()
 {
@@ -134,10 +134,10 @@ void feeding_loop()
 {
 	gripper_servo.Plan(servo_loop_time);
 
-	const auto pushing_t = servo_loop_time - ball_release_2_delay;
-	lifter_servo.Plan(pushing_t);
+	const auto lift_t = servo_loop_time - start_grabbing_to_lift_down_delay;
+	lifter_servo.Plan(lift_t);
 
-	const auto motor_t = pushing_t - ball_release_to_push_delay;
+	const auto motor_t = lift_t - ball_release_to_push_delay;
 	motors.Plan(motor_t);
 
 	servo_loop_time += main_loop_interval;
@@ -145,8 +145,8 @@ void feeding_loop()
 
 void warm_up_motors()
 {
-	const auto pushing_t = servo_loop_time - ball_release_2_delay;
-	const auto motor_t = pushing_t - ball_release_to_push_delay;
+	const auto lift_t = servo_loop_time - start_grabbing_to_lift_down_delay;
+	const auto motor_t = lift_t - ball_release_to_push_delay;
 	motors.Plan(motor_t);
 	servo_loop_time += main_loop_interval;
 
