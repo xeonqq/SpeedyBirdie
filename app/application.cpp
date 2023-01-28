@@ -8,8 +8,8 @@
 #include <state.h>
 
 HttpServer server;
-PlannedServo<FeederServo> gripper_servo{0.5, 0.5, D5, 1000, 2000};
-PlannedServo<FeederServo> lifter_servo{0.5, 0.5, D6, 800, 2200};
+PlannedServo<FeederServo> gripper_servo{0.5, 1.0, D5, 1000, 2000};
+PlannedServo<FeederServo> lifter_servo{1.0, 0.5, D6, 800, 2200};
 PlannedServo<Motors> motors{0.5, 1, D0, D1, 1000, 2000};
 
 SimpleTimer main_loop_timer;
