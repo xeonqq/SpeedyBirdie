@@ -23,6 +23,7 @@ float servo_loop_time = 0;								 // sec
 float ball_release_to_push_delay = 0.5;					 // sec
 constexpr float start_grabbing_to_lift_down_delay = 0.5; // sec
 
+float GetShootingIntervalLowerBound();
 bool AreActuatorsReady()
 {
 	return gripper_servo.IsReady() && lifter_servo.IsReady();
@@ -90,7 +91,8 @@ void onApplyConfig(HttpRequest& request, HttpResponse& response)
 {
 	if(request.method == HTTP_POST) {
 		AppSettings.get<ShootingPower>() = request.getPostParameter("power").toInt();
-		AppSettings.get<ShootingIntervalSec>() = request.getPostParameter("interval").toFloat();
+		AppSettings.get<ShootingIntervalSec>() =
+			std::max(request.getPostParameter("interval").toFloat(), GetShootingIntervalLowerBound());
 		AppSettings.save();
 		Serial.println(_F("save new config"));
 
@@ -219,12 +221,20 @@ void startWebServer()
 	Serial.println(_F("==========================\r\n"));
 }
 
+float GetShootingIntervalLowerBound()
+{
+	return gripper_servo.GetNonIdleTime() + lifter_servo.GetRetreatTime();
+}
+
 void loadConfig()
 {
 	AppSettings.load();
 	motors.SetPwmOffsets({AppSettings.get<LeftMotorOffset>(), AppSettings.get<RightMotorOffset>()});
 
-	float shooting_interval_sec = constrain(AppSettings.get<ShootingIntervalSec>().value, 1, 10);
+	AppSettings.get<ShootingIntervalSec>() =
+		constrain(AppSettings.get<ShootingIntervalSec>().value, GetShootingIntervalLowerBound(), 10);
+
+	float shooting_interval_sec = AppSettings.get<ShootingIntervalSec>();
 
 	gripper_servo.Init(shooting_interval_sec, AppSettings.get<GripperServoStartPosition>().value,
 					   AppSettings.get<GripperServoEndPosition>().value);

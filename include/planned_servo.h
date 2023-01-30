@@ -81,10 +81,14 @@ public:
 	{
 		return push_time_;
 	}
+	float GetNonIdleTime() const
+	{
+		return GetPushingTime() + GetRetreatTime() + constant_end_value_duration_;
+	}
 
 	float GetIdleTime() const
 	{
-		return interval_duration_sec_ - 2 * push_time_ - constant_end_value_duration_;
+		return interval_duration_sec_ - GetNonIdleTime();
 	}
 
 	bool IsReady() const
