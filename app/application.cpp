@@ -11,8 +11,12 @@ HttpServer server;
 PlannedServo<FeederServo> gripper_servo{0.5, 1.0, D5, 1000, 2000};
 PlannedServo<FeederServo> lifter_servo{1.0, 0.5, D6, 800, 2200};
 PlannedServo<Motors> motors{0.5, 1, D0, D1, 1000, 2000};
+const uint8_t StartStopButtonPin = D2;
+const uint32_t StartStopPressedToFeedingDelayMs = 3 * 1000;
 
 SimpleTimer main_loop_timer;
+Timer button_read_timer;
+Timer delay_timer;
 
 constexpr float main_loop_interval = 0.02;				 // sec
 float servo_loop_time = 0;								 // sec
@@ -30,6 +34,11 @@ void TransitionTo(State state)
 	if((state == State::Feeding) || (state == State::WarmUp)) {
 		servo_loop_time = 0;
 	}
+	Serial << micros() << _F(" Transition To:") << static_cast<int>(g_state) << endl;
+}
+void TransitionToWarmUp()
+{
+	TransitionTo(State::WarmUp);
 }
 
 void onIndex(HttpRequest& request, HttpResponse& response)
@@ -88,7 +97,8 @@ void onApplyConfig(HttpRequest& request, HttpResponse& response)
 		float shooting_interval_sec = AppSettings.get<ShootingIntervalSec>();
 		gripper_servo.InitByDuration(shooting_interval_sec);
 		lifter_servo.InitByDuration(shooting_interval_sec);
-		motors.Init(shooting_interval_sec, 0, AppSettings.get<ShootingPower>(), false);
+		motors.Init(shooting_interval_sec, AppSettings.get<ShootingPower>() * 0.5, AppSettings.get<ShootingPower>(),
+					false);
 
 		TransitionTo(State::Stop);
 	}
@@ -120,7 +130,7 @@ void onServoPwm(HttpRequest& request, HttpResponse& response)
 
 void onStartFeeding(HttpRequest& request, HttpResponse& response)
 {
-	TransitionTo(State::WarmUp);
+	TransitionToWarmUp();
 }
 
 void onStopFeeding(HttpRequest& request, HttpResponse& response)
@@ -227,6 +237,37 @@ void loadConfig()
 	motors.Init(shooting_interval_sec, 0, shooting_power, false);
 }
 
+void delayedStartFeeding(uint32_t delay_ms)
+{
+	delay_timer.initializeMs(delay_ms, TransitionToWarmUp).startOnce();
+}
+
+void onStartStopButtonPressed()
+{
+	if(!button_read_timer.isStarted()) {
+		button_read_timer
+			.initializeMs(15,
+						  [&]() {
+							  auto button_status = digitalRead(StartStopButtonPin);
+							  Serial << micros() << _F("   Pin changed, now   ") << button_status << endl;
+							  if(button_status == LOW) { //start feeding
+								  delayedStartFeeding(StartStopPressedToFeedingDelayMs);
+							  } else {
+								  TransitionTo(State::Stop);
+							  }
+							  button_read_timer.stop();
+						  })
+			.startOnce();
+	}
+}
+
+void setupStartStopButton()
+{
+	//The other pin of the switch should be connected to GND
+	attachInterrupt(StartStopButtonPin, InterruptDelegate(onStartStopButtonPressed), CHANGE);
+	pinMode(StartStopButtonPin, INPUT_PULLUP);
+}
+
 void init()
 {
 	spiffs_mount(); // Mount file system, in order to work with files
@@ -234,6 +275,7 @@ void init()
 	Serial.begin(SERIAL_BAUD_RATE); // 115200 by default
 	Serial.systemDebugOutput(true); // Enable debug output to serial
 
+	setupStartStopButton();
 	// Soft access point
 	WifiAccessPoint.enable(true);
 	WifiAccessPoint.config(_F("BirdyFeeder"), "chinasprung", AUTH_WPA_WPA2_PSK);
