@@ -249,7 +249,7 @@ void delayedStartFeeding(uint32_t delay_ms) {
 void onStartStopButtonPressed() {
   if (!button_read_timer.isStarted()) {
     button_read_timer
-        .initializeMs(15,
+        .initializeMs(50,
                       [&]() {
                         auto button_status = digitalRead(StartStopButtonPin);
                         Serial << micros() << _F("   Pin changed, now   ")
