@@ -14,7 +14,5 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Start container
-      run: docker-compose run --rm sming-cli
-    - name: make
-      run: make
+      run: docker-compose run --rm sming-cli bash -i -c "make"
 
