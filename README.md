@@ -4,6 +4,16 @@ It can be easily configured and controlled by mobile web app.
 
 ![](pics/IMG_1548.JPG)
 
+SSID: SpeedyBirdie
+
+password: chinasprung
+
+ip: 192.168.0.1
+
+Main page (index.html)     |  Configuration page (dev.html)
+:-------------------------:|:-------------------------:
+![](pics/phone1.jpg)  |  ![](pics/phone2.jpg)
+
 ### Build and Flash (on Linux)
 The project depends on https://github.com/SmingHub/Sming, therefore it is easier to use docker
 
