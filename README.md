@@ -6,6 +6,9 @@
 
 ![](pics/IMG_1548.JPG)
 
+[![Demo video](https://img.youtube.com/vi/R7ChbA/maxresdefault.jpg)](https://youtu.be/R7ChbA-bj2o)
+
+
 > SSID: SpeedyBirdie
 
 > password: chinasprung
@@ -45,4 +48,5 @@ make flashapp
 make terminal # ctrl-[ to exit
 ```
 
-
+#### Build Instruction & 3d printed parts
+https://www.thingiverse.com/thing:5827863
