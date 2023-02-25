@@ -6,7 +6,7 @@
 
 ![](pics/IMG_1548.JPG)
 
-[![Demo video](https://img.youtube.com/vi/R7ChbA/maxresdefault.jpg)](https://youtu.be/R7ChbA-bj2o)
+[![Demo video](https://img.youtube.com/vi/R7ChbA-bj2o/maxresdefault.jpg)](https://youtu.be/R7ChbA-bj2o)
 
 
 > SSID: SpeedyBirdie
