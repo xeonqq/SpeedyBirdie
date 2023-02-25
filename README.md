@@ -4,9 +4,8 @@
 > An ESP8266 powered affordable open-source badmintion shuttlecock launcher, most of the parts are 3D printable. 
 > It can be easily configured and controlled by mobile web app.
 
-![](pics/IMG_1548.JPG)
 
-[![Demo video](https://img.youtube.com/vi/R7ChbA-bj2o/maxresdefault.jpg)](https://youtu.be/R7ChbA-bj2o)
+https://user-images.githubusercontent.com/4160429/221366746-91ebf04f-b197-4e0b-ada8-2b8b55a60042.mp4
 
 
 > SSID: SpeedyBirdie
