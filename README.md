@@ -4,6 +4,7 @@
 > An ESP8266 powered affordable open-source badminton shuttlecock launcher, most of the parts are 3D printable. 
 > It can be easily configured and controlled by mobile web app.
 
+ <a class="bmc-button" target="_blank" href="https://paypal.me/xeonqq"><img src="https://raw.githubusercontent.com/stefan-niedermann/paypal-donate-button/master/paypal-donate-button.png" width="200" height="77" alt="Donate with PayPal">
 
 https://user-images.githubusercontent.com/4160429/221366746-91ebf04f-b197-4e0b-ada8-2b8b55a60042.mp4
 
