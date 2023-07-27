@@ -26,7 +26,8 @@ The project depends on https://github.com/SmingHub/Sming, therefore it is easier
 git clone https://github.com/xeonqq/SpeedyBirdie
 cd SpeedyBirdie
 
-# connect the esp8266 
+# connect the esp8266
+docker build . -t sming-cli
 docker-compose run --rm sming-cli
 make
 ```
