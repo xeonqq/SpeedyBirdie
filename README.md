@@ -49,3 +49,15 @@ make terminal # ctrl-] to exit
 
 #### Build Instruction & 3d printed parts
 https://www.thingiverse.com/thing:5827863
+
+### Sponsor Content
+The SpeedyBirdie project is completely opensource, the code and STL files provides everying needed to accomplish this project. 
+However, some building instruction and wiring diagram would help in some cases. As a sponsor, you would be able to enjoy the following premium content:
+
+* We provide a comprehensive instruction manual in PDF format as well as some version 2 exlusive 3d-printable parts.
+
+  - [SpeedyBirdie Build Instructions (Include version 2 3D printed parts)](https://payhip.com/b/13kHF)
+
+* The pre-compiled image with flash instructions, our one-click flashable firmware ensures a smooth setup process without need of linux or docker setup.
+
+  - [SpeedyBirdie Pre-compiled Firmware (speedybirdie.bin)](https://payhip.com/b/kO4ir)
