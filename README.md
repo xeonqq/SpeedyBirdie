@@ -50,7 +50,12 @@ make terminal # ctrl-] to exit
 #### Build Instruction & 3d printed parts
 https://www.thingiverse.com/thing:5827863
 
+
+
 ### Sponsor Content
+<img align="left" width="64" height="64" src="pics/sponsorship.png" alt="sponsor">
+
+
 The SpeedyBirdie project is completely opensource, the code and STL files provides everying needed to accomplish this project. 
 However, some building instruction and wiring diagram would help in some cases. As a sponsor, you would be able to enjoy the following premium content:
 
