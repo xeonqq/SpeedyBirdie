@@ -66,3 +66,5 @@ However, some building instruction and wiring diagram would help in some cases. 
 * The pre-compiled image with flash instructions, our one-click flashable firmware ensures a smooth setup process without need of linux or docker setup.
 
   - [SpeedyBirdie Pre-compiled Firmware (speedybirdie.bin)](https://payhip.com/b/kO4ir)
+
+* Or the above two together as a [bundle](https://payhip.com/b/9Ng2s).
