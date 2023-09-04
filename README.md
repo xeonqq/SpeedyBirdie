@@ -34,12 +34,10 @@ make
 #### Flash
 ```bash
 # when inside docker
-# option1 flash app and upload website data: (flash for the first time)
-make flash 
-
-# option2 flash app only: (not the first time flash)
-make flashapp
+# flash app and upload website data:
+make clean && make flash 
 ```
+Note the settings data will be erased every time a new flash happens.
 
 #### Debug
 ```bash
